@@ -8109,53 +8109,18 @@ do
     end
 
     function PanModule.getStatus()
-        local ToolUI = PlayerGui:WaitForChild("ToolUI")
-        local FillingPan = ToolUI:WaitForChild("FillingPan")
-        local FillText = FillingPan:WaitForChild("FillText")
-
-        local function getDefaultStatus()
-            return {
-                current = 0,
-                max = 100,
-                isFull = false,
-                isEmpty = true
-            }
-        end
-
-        local function cleanAndParseNumber(raw, fallback)
-            if not raw then
-                return fallback
-            end
-            local cleaned = string.gsub(string.gsub(string.gsub(tostring(raw), ",", ""), " ", ""), "%s+", "")
-            if cleaned == "" then
-                return fallback
-            end
-            local parsed = tonumber(cleaned)
-            return parsed and math.max(0, math.floor(parsed)) or fallback
-        end
-
-        if not FillText or not FillText.ContentText then
-            return getDefaultStatus()
-        end
-
-        local contentText = tostring(FillText.ContentText)
-        if contentText == "" then
-            return getDefaultStatus()
-        end
-
-        local fillNumbers = string.split(contentText, "/")
-        if not fillNumbers or #fillNumbers < 2 then
-            return getDefaultStatus()
-        end
-
-        local current = cleanAndParseNumber(fillNumbers[1], 0)
-        local max = math.max(1, cleanAndParseNumber(fillNumbers[2], 100))
-
+        local character = Player.Character
+        local tool = character and character:FindFirstChildOfClass("Tool")
+        local stats = Player:FindFirstChild("Stats")
+        local fill = tool and tonumber(tool:GetAttribute("Fill"))
+        local capacity = stats and tonumber(stats:GetAttribute("Capacity"))
+        fill = fill or 0
+        capacity = math.max(1, capacity or 100)
         return {
-            current = current,
-            max = max,
-            isFull = current >= max,
-            isEmpty = current <= 0
+            current = fill,
+            max = capacity,
+            isFull = fill >= capacity,
+            isEmpty = fill <= 0
         }
     end
 
@@ -8168,234 +8133,89 @@ do
     function PanModule.handleAction(mode, actionType, executeToCompletion, killSwitch)
         executeToCompletion = executeToCompletion or false
 
-        local function validatePan()
-            -- Prefer the pan already in Character. Do not call EquipRemote
-            -- again during the same action.
-            local pan = nil
-            for _, child in ipairs(Character:GetChildren()) do
-                if child:GetAttribute("ItemType") == "Pan" then
-                    pan = child
-                    break
-                end
-            end
-
-            pan = pan or PanModule.equipPan()
-            local folder = pan and pan:FindFirstChild("Scripts")
-            if not folder then
-                Utility.createNotification("No Pan found.")
-                return nil
-            end
-
-            local scripts = {}
-            for _, child in ipairs(folder:GetChildren()) do
-                if child:IsA("RemoteFunction") or child:IsA("RemoteEvent") then
-                    scripts[child.Name] = child
-                end
-            end
-
-            if next(scripts) then
-                return scripts
-            else
-                Utility.createNotification("Pan has no scripts.")
-                return nil
-            end
+        local function getEquippedTool()
+            local character = Player.Character
+            return character and character:FindFirstChildOfClass("Tool")
         end
 
-        local function isAtSavedLocation(locationCFrame, maxDistance)
-            local root = Character and Character:FindFirstChild("HumanoidRootPart")
-            if not root or not locationCFrame then
-                return false
-            end
-
-            maxDistance = maxDistance or 18
-            return (root.Position - locationCFrame.Position).Magnitude <= maxDistance
+        local function getScripts(tool)
+            local folder = tool and tool:FindFirstChild("Scripts")
+            if not folder then return nil end
+            return {
+                Collect = folder:FindFirstChild("Collect"),
+                ToggleShovelActive = folder:FindFirstChild("ToggleShovelActive"),
+                Pan = folder:FindFirstChild("Pan"),
+                Shake = folder:FindFirstChild("Shake")
+            }
         end
 
-        local function shakeUntilNotPanning(shakeScript, killSwitch)
-            while LocalCharacter:GetAttribute("Panning") do
-                if killSwitch and not killSwitch() then
-                    return false
+        local function alive()
+            return not killSwitch or killSwitch()
+        end
+
+        local function digToCapacity(scripts)
+            while alive() do
+                if PanModule.getStatus().isFull then
+                    return "SUCCESS"
                 end
                 pcall(function()
-                    shakeScript:FireServer()
+                    game:GetService("VirtualInputManager"):SendMouseButtonEvent(0, 0, 0, true, game, 0)
                 end)
-                task.wait()
+                local ok = pcall(function()
+                    scripts.Collect:InvokeServer(1)
+                end)
+                pcall(function()
+                    scripts.ToggleShovelActive:FireServer(false)
+                end)
+                task.wait(ok and 0 or 0.1)
             end
-            return true
+            return "KILLED"
         end
 
-        local function fillToCompletion(collectScript)
-            local scripts = validatePan()
-            local shakeScript = scripts and scripts.Shake
-
-            while task.wait() do
-                if killSwitch and not killSwitch() then
-                    return "KILLED"
+        local function washToEmpty(scripts)
+            task.wait(0.5)
+            while alive() do
+                if PanModule.getStatus().isEmpty then
+                    return "SUCCESS"
                 end
-
-                if LocalCharacter:GetAttribute("Panning") then
-                    if shakeScript and not shakeUntilNotPanning(shakeScript, killSwitch) then
-                        return "KILLED"
-                    end
-                end
-
-                local status = PanModule.getStatus()
-                if status and status.isFull then
-                    break
-                end
-
-                if State.AutoFarm.sandCFrame and not isAtSavedLocation(State.AutoFarm.sandCFrame, 25) then
-                    break
-                end
-
-                local invokeOk, invokeErr = pcall(function()
-                    collectScript:InvokeServer(99)
+                pcall(function()
+                    scripts.Pan:InvokeServer()
                 end)
-
-                if not invokeOk then
-                    warn("[AutoFarm] Dig Collect failed: " .. tostring(invokeErr))
-                    task.wait(0.1)
-                end
+                pcall(function()
+                    scripts.Shake:FireServer()
+                end)
+                task.wait(0.1)
             end
-
-            return (not killSwitch or killSwitch()) and "SUCCESS" or "KILLED"
+            return "KILLED"
         end
 
-        local function executeSingle(collectScript)
-            if killSwitch and not killSwitch() then
-                return "KILLED"
+        local tool = getEquippedTool()
+        if not tool then return "FAIL" end
+        local scripts = getScripts(tool)
+        if not scripts then return "FAIL" end
+
+        if actionType == "Dig" then
+            if not scripts.Collect or not scripts.ToggleShovelActive then return "FAIL" end
+            if PanModule.getStatus().isFull then return "SUCCESS" end
+            if mode ~= "Instant" then return "FAIL" end
+            if executeToCompletion then
+                return digToCapacity(scripts)
             end
-            local ok, err = pcall(function()
-                collectScript:InvokeServer(99)
+            pcall(function()
+                game:GetService("VirtualInputManager"):SendMouseButtonEvent(0, 0, 0, true, game, 0)
             end)
-            if not ok then
-                warn("[AutoFarm] Dig Collect failed: " .. tostring(err))
-                return "FAIL"
-            end
+            pcall(function() scripts.Collect:InvokeServer(1) end)
+            pcall(function() scripts.ToggleShovelActive:FireServer(false) end)
             return "SUCCESS"
         end
 
-        local function emptyToCompletion(panScript, shakeScript)
-            -- The game's working pan loop requires Pan + Shake repeatedly.
-            -- Pan() is not a one-time initialization call.
-            task.wait(0.5)
-
-            while task.wait(0.05) do
-                if killSwitch and not killSwitch() then
-                    WashAnimation:Stop()
-                    return "KILLED"
-                end
-
-                local status = PanModule.getStatus()
-                if not status or status.isEmpty then
-                    break
-                end
-
-                local panOk = pcall(function()
-                    panScript:InvokeServer()
-                end)
-
-                if not panOk then
-                    task.wait(0.1)
-                end
-
-                if killSwitch and not killSwitch() then
-                    WashAnimation:Stop()
-                    return "KILLED"
-                end
-
-                pcall(function()
-                    shakeScript:FireServer()
-                end)
-            end
-
-            WashAnimation:Stop()
-            return (not killSwitch or killSwitch()) and "SUCCESS" or "KILLED"
+        if actionType == "Wash" then
+            if not scripts.Pan or not scripts.Shake then return "FAIL" end
+            if PanModule.getStatus().isEmpty then return "SUCCESS" end
+            return washToEmpty(scripts)
         end
 
-        local handlers = {
-            Dig = function()
-                if killSwitch and not killSwitch() then
-                    return "KILLED"
-                end
-
-                local scripts = validatePan()
-                if not scripts then
-                    return "FAIL"
-                end
-
-                local collectScript = scripts.Collect
-                if not collectScript then
-                    return "FAIL"
-                end
-
-                local status = PanModule.getStatus()
-                if status and status.isFull then
-                    return "SUCCESS"
-                end
-
-                if mode == "Legit" then
-                    Utility.createNotification("Legit mode is Work In Progress!")
-                    return "FAIL"
-                elseif mode == "Instant" then
-                    if executeToCompletion then
-                        return fillToCompletion(collectScript)
-                    else
-                        return executeSingle(collectScript)
-                    end
-                end
-
-                return "FAIL"
-            end,
-
-            Wash = function()
-                if killSwitch and not killSwitch() then
-                    return "KILLED"
-                end
-
-                local scripts = validatePan()
-                if not scripts then
-                    return "FAIL"
-                end
-
-                local shakeScript = scripts.Shake
-                local panScript = scripts.Pan
-
-                if not shakeScript or not panScript then
-                    return "FAIL"
-                end
-
-                local status = PanModule.getStatus()
-                if status and status.isEmpty then
-                    return "SUCCESS"
-                end
-
-                local panOk, panErr = pcall(function()
-                    panScript:InvokeServer()
-                end)
-
-                if not panOk then
-                    warn("[AutoFarm] Pan/Wash failed: " .. tostring(panErr))
-                    return "FAIL"
-                end
-
-                return emptyToCompletion(panScript, shakeScript)
-            end
-        }
-
-        local handler = handlers[actionType]
-        if not handler then
-            Utility.createNotification("Invalid action type! Use 'Dig' or 'Wash'.")
-            return "FAIL"
-        end
-
-        local ok, result = pcall(handler)
-        if not ok then
-            warn("PanAction failed: " .. tostring(result))
-            return "FAIL"
-        end
-
-        return result or "SUCCESS"
+        return "FAIL"
     end
 end
 
@@ -12336,41 +12156,23 @@ local function initializeMainTab()
         })
 
     SimpleUI:CreateButton(AutoFarmSection.Container, "Save Dig Location", function()
-        if PanModule.getRegion(HumanoidRootPart) == "Deposit" then
-            State.AutoFarm.sandCFrame = HumanoidRootPart.CFrame
-            SimpleUI:CreateNotification({
-                Type = "Success",
-                Title = "Location Saved",
-                Description = "Dig location has been saved successfully.",
-                Duration = 5
-            })
-        else
-            SimpleUI:CreateNotification({
-                Type = "Error",
-                Title = "Invalid Location",
-                Description = "You must stand within a deposit area to save this location.",
-                Duration = 5
-            })
-        end
+        State.AutoFarm.sandCFrame = HumanoidRootPart.CFrame
+        SimpleUI:CreateNotification({
+            Type = "Success",
+            Title = "Location Saved",
+            Description = "Dig location has been saved successfully.",
+            Duration = 5
+        })
     end)
 
     SimpleUI:CreateButton(AutoFarmSection.Container, "Save Washing Location", function()
-        if PanModule.getRegion(HumanoidRootPart) == "Water" then
-            State.AutoFarm.waterCFrame = HumanoidRootPart.CFrame
-            SimpleUI:CreateNotification({
-                Type = "Success",
-                Title = "Location Saved",
-                Description = "Washing location has been saved successfully.",
-                Duration = 5
-            })
-        else
-            SimpleUI:CreateNotification({
-                Type = "Error",
-                Title = "Invalid Location",
-                Description = "You must stand within a water region to save this location.",
-                Duration = 5
-            })
-        end
+        State.AutoFarm.waterCFrame = HumanoidRootPart.CFrame
+        SimpleUI:CreateNotification({
+            Type = "Success",
+            Title = "Location Saved",
+            Description = "Washing location has been saved successfully.",
+            Duration = 5
+        })
     end)
 
     SimpleUI:CreateToggle(AutoFarmSection.Container, "Enable Auto Farm", false, function(state)

@@ -11225,6 +11225,85 @@ do
         end
     end
 
+    function AutoFarmModule.startAutoSellLoop()
+        if State.Sell._autoLoopRunning then
+            return
+        end
+
+        State.Sell._autoLoopRunning = true
+
+        task.spawn(function()
+            while State.Sell.autoSell do
+                local ok = pcall(function()
+                    local mode = State.Sell.type or "Auto"
+                    local shouldSell = false
+
+                    if mode == "Auto" then
+                        shouldSell = SellModule.isBackpackAtCapacity()
+                    elseif mode == "Threshold" then
+                        shouldSell = SellModule.getInventoryCount() >= (tonumber(State.Sell.threshold) or 50)
+                    elseif mode == "Duration" then
+                        local delay = tonumber(State.Sell.delay) or 300
+                        shouldSell = (os.clock() - (State.Sell._lastSell or os.clock())) >= delay
+                    end
+
+                    if not shouldSell then
+                        return
+                    end
+
+                    -- Temporarily pause farming so selling cannot fight the
+                    -- farm teleport/action loop.
+                    local farmWasRunning = State.AutoFarm.active and State.AutoFarm.running
+                    if farmWasRunning then
+                        AutoFarmModule.pause("AutoSell")
+                    end
+
+                    local sold = SellModule.sell({}, State.Sell.mode or "Teleport")
+                    if sold then
+                        State.Sell._lastSell = os.clock()
+                        State.Sell._scheduledSell = false
+                    end
+
+                    if farmWasRunning and State.AutoFarm.active then
+                        AutoFarmModule.resume("AutoSell")
+                    end
+                end)
+
+                if not ok and State.Sell.autoSell then
+                    -- Keep the watcher alive; a transient sell failure must
+                    -- not permanently disable automatic selling.
+                end
+
+                task.wait(5)
+            end
+
+            State.Sell._autoLoopRunning = false
+        end)
+    end
+
+    function AutoFarmModule.stop()
+        -- Invalidate the running session immediately so an old task.spawn
+        -- can never start another farm cycle after the toggle is disabled.
+        State.AutoFarm.session = (State.AutoFarm.session or 0) + 1
+        State.AutoFarm.active = false
+        State.AutoFarm.stopRequested = true
+        State.AutoFarm.interrupted = false
+        State.AutoFarm.interruptReason = nil
+
+        if State.AutoFarm.locked then
+            CharacterLock.unlock()
+            State.AutoFarm.locked = false
+        end
+
+        TaskManager:clearSubTasks()
+        if TaskManager:getMainTask() == "AutoFarm" then
+            TaskManager:finishTask("AutoFarm")
+        end
+
+        State.AutoFarm.running = false
+        Utility.createNotification("🛑 Auto Farm Disabled")
+    end
+
     function AutoFarmModule.teardown()
         if State.AutoFarm.locked then
             CharacterLock.unlock()
@@ -12324,21 +12403,19 @@ local function initializeMainTab()
 
     SimpleUI:CreateToggle(SellSection.Container, "Enable Automatic Selling", false, function(state)
         State.Sell.autoSell = state
-        State.Sell._lastSell = State.Sell._lastSell or 0
         State.Sell._scheduledSell = false
 
         if state then
-            task.spawn(function()
-                while State.Sell.autoSell do
-                    if State.Sell.type == "Duration" then
-                        local delay = tonumber(State.Sell.delay) or 300
-                        if os.clock() - State.Sell._lastSell >= delay then
-                            State.Sell._scheduledSell = true
-                        end
-                    end
-                    task.wait(5)
-                end
-            end)
+            -- Start the timer from the moment the user enables Auto Sell.
+            State.Sell._lastSell = os.clock()
+            AutoFarmModule.startAutoSellLoop()
+        else
+            -- The watcher exits naturally on its next condition check.
+            State.Sell._scheduledSell = false
+        end
+
+        Utility.createNotification(state and "Automatic Selling Enabled" or "Automatic Selling Disabled")
+    end))
         end
 
         Utility.createNotification(state and "Automatic Selling Enabled" or "Automatic Selling Disabled")

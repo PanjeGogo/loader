@@ -3840,7 +3840,7 @@ do
             end
 
             local ScreenGui = self:GetScreenGui()
-            local Scale = SimpleUI.Utility:IsMobile() and 0.5 or 1
+            local Scale = SimpleUI.Utility:IsMobile() and 0.90 or 1
 
             local Parent = SimpleUI.Utility:CreateInstance("Frame", {
                 Name = SimpleUI.Utility:GenerateId(),
@@ -3861,7 +3861,7 @@ do
                 Name = SimpleUI.Utility:GenerateId(),
                 Position = UDim2.new(1, -20, 0, 20),
                 AnchorPoint = Vector2.new(1, 0),
-                Size = UDim2.new(0, 360, 1, -40),
+                Size = UDim2.new(0, IsMobile and 430 or 420, 1, -40),
                 BackgroundTransparency = 1,
                 ZIndex = SimpleUI.Constants.ZIndex.Notification
             }, Parent)
@@ -3916,8 +3916,8 @@ do
             local Accent = TypeColors[Config.Type] or Config.Color or Theme.Accent
             local LightAccent = Accent:Lerp(Color3.new(1, 1, 1), 0.4)
             local TagText = Config.Tag or TypeTags[Config.Type] or "NOTICE"
-            local BasePad = IsMobile and 8 or 10
-            local SidePad = IsMobile and 10 or 12
+            local BasePad = IsMobile and 12 or 12
+            local SidePad = IsMobile and 14 or 14
 
             local Notification = SimpleUI.Utility:CreateInstance("Frame", {
                 Name = SimpleUI.Utility:GenerateId(),
@@ -4005,7 +4005,7 @@ do
                 Text = Config.Title or "Notification",
                 TextColor3 = Theme.TextActive,
                 TextTransparency = 1,
-                TextSize = IsMobile and 12 or 13,
+                TextSize = IsMobile and 16 or 15,
                 Font = Theme.FontPrimary,
                 TextXAlignment = Enum.TextXAlignment.Left,
                 TextWrapped = false,
@@ -4024,7 +4024,7 @@ do
                 Text = TagText,
                 TextColor3 = LightAccent,
                 TextTransparency = 1,
-                TextSize = IsMobile and 8 or 9,
+                TextSize = IsMobile and 11 or 10,
                 Font = Theme.FontPrimary,
                 TextXAlignment = Enum.TextXAlignment.Left,
                 LayoutOrder = 2,
@@ -4051,7 +4051,7 @@ do
                     Text = Config.Description,
                     TextColor3 = Theme.TextSecondary,
                     TextTransparency = 1,
-                    TextSize = IsMobile and 11 or 12,
+                    TextSize = IsMobile and 14 or 13,
                     Font = Theme.FontSecondary,
                     TextXAlignment = Enum.TextXAlignment.Left,
                     TextWrapped = true,
@@ -4071,7 +4071,7 @@ do
                     BackgroundTransparency = 1,
                     Text = "×",
                     Font = Theme.FontPrimary,
-                    TextSize = IsMobile and 18 or 20,
+                    TextSize = IsMobile and 22 or 22,
                     TextColor3 = Theme.TextInactive,
                     TextTransparency = 1,
                     AutoButtonColor = false,
@@ -4142,7 +4142,7 @@ do
                     TextH = TextH + Layout.Padding.Offset * (ChildCount - 1)
                 end
 
-                local MinH = IsMobile and 38 or 42
+                local MinH = IsMobile and 60 or 56
                 local CardH = math.max(TextH + BasePad * 2, MinH)
                 local BarH = HasDuration and 2 or 0
 

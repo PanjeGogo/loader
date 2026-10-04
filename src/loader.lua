@@ -681,8 +681,14 @@ local MAPS = {
         requiresUtils = true
     },
 
-    -- Kick a Lucky Block
+    -- Kick a Lucky Block - World 1 (Celestial)
     ["89469502395769"] = {
+        name = "kick_a_lucky_block",
+        requiresUtils = false
+    },
+
+    -- Kick a Lucky Block - World 2 (Omega)
+    ["77340226777613"] = {
         name = "kick_a_lucky_block",
         requiresUtils = false
     }

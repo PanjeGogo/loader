@@ -29,29 +29,20 @@ if ENV.__REEFHUB_REEFHUB_CLEANUP then
     pcall(ENV.__REEFHUB_REEFHUB_CLEANUP)
 end
 
-local okUI, uiSource = pcall(function()
-    return game:HttpGet("https://raw.githubusercontent.com/PuckAFK/Puck-Loader/main/ui/PuckUI.lua")
-end)
-if not okUI or type(uiSource) ~= "string" or #uiSource < 100 then
-    return
-end
+local repo = "https://raw.githubusercontent.com/deividcomsono/Obsidian/main/"
+local Library = loadstring(game:HttpGet(repo .. "Library.lua"))()
+local SaveManager = loadstring(game:HttpGet(repo .. "addons/SaveManager.lua"))()
+local ThemeManager = loadstring(game:HttpGet(repo .. "addons/ThemeManager.lua"))()
 
-local uiChunk = compiler(uiSource)
-if not uiChunk then
-    return
-end
-
-local okReefHub, ReefHubUI = pcall(uiChunk)
-if not okReefHub or type(ReefHubUI) ~= "table" or type(ReefHubUI.CreateWindow) ~= "function" then
-    return
-end
+Library.ForceCheckbox = false
+Library.ShowToggleFrameInKeybinds = true
 
 local Config = {
-    Master = true,
-    AutoTutorial = true,
-    AutoKick = true,
-    PerfectKick = true,
-    TurboCollect = true,
+    Master = false,
+    AutoTutorial = false,
+    AutoKick = false,
+    PerfectKick = false,
+    TurboCollect = false,
     TravelMode = "Walk", -- Walk / Teleport (Safe) / Manual
     KickDelay = 0.40,
 
@@ -61,34 +52,34 @@ local Config = {
     FarmKickMode = "Max Distance",
     FarmRarityBuffer = 12,
 
-    AutoOpenLuckyBlocks = true,
+    AutoOpenLuckyBlocks = false,
     LuckyBlockEveryKicks = 3,
 
-    AutoPlaceBest = true,
+    AutoPlaceBest = false,
     AutoDismissLowRewards = false, -- legacy route disabled; collect then Auto Sell
-    ReplaceWeak = true,
+    ReplaceWeak = false,
     ReplaceThreshold = 1.0, -- replace on any genuine improvement
-    AutoCollectCash = true,
+    AutoCollectCash = false,
     CashCollectInterval = 3.0,
 
-    AutoUpgradeBrainrots = true,
+    AutoUpgradeBrainrots = false,
     BrainrotUpgradeSpendFraction = 0.85,
     BrainrotUpgradeMaxPerPass = 18,
     BrainrotUpgradeKeepFraction = 1.00, -- every placed CPS brainrot eligible; lowest levels first
 
-    AutoSellLeftovers = true,
+    AutoSellLeftovers = false,
     SellMode = "Sell All UI",
-    SellUseNativeSellerTeleport = true,
+    SellUseNativeSellerTeleport = false,
     SellMaxPerVisit = 20, -- fallback individual mode only
     SellAllButtonTimeout = 1.75,
     SellAllConfirmTimeout = 1.75,
 
-    AutoBuyWeights = true,
-    AutoTrain = true,
+    AutoBuyWeights = false,
+    AutoTrain = false,
 
-    AdaptiveTraining = true,
+    AdaptiveTraining = false,
 
-    SmartTrainingCadence = true,
+    SmartTrainingCadence = false,
     TrainingBurstEveryKicks = 2,
     TrainingBurstSeconds = 2.5,
     NextRaritySprintMaxSeconds = 7.0,
@@ -101,25 +92,25 @@ local Config = {
     -- Fixed fallback only when Adaptive Distance Training is disabled.
     TrainBetweenKicks = 4.0,
 
-    AutoBuySpeed = true,
+    AutoBuySpeed = false,
     SpeedSpendFraction = 0.40,
-    AutoRebirth = true,
+    AutoRebirth = false,
 
     -- Automatic rewards / progression
-    AutoClaimFreeItem = true,
-    AutoClaimOffline = true,
-    AutoWheelSpins = true,
-    AutoKickBonuses = true,
-    AutoKickStyles = true,
+    AutoClaimFreeItem = false,
+    AutoClaimOffline = false,
+    AutoWheelSpins = false,
+    AutoKickBonuses = false,
+    AutoKickStyles = false,
     KickStyleMode = "Throughput",
-    AutoBaseSlots = true,
-    AutoBattlePassClaims = true,
-    AutoMailboxRewards = true,
+    AutoBaseSlots = false,
+    AutoBattlePassClaims = false,
+    AutoMailboxRewards = false,
     AutoGroupGift = false,
 
     -- Event systems
-    AutoGymTime = true,
-    GymTimeStayUntilEnd = true,
+    AutoGymTime = false,
+    GymTimeStayUntilEnd = false,
     GymEventTravelMode = "Teleport (Safe)",
     GymEventMissingGrace = 1.50,
 
@@ -4769,6 +4760,32 @@ local function autoSellLeftoverBrainrots()
     return false
 end
 
+Runtime.SellNow = function()
+    if not Runtime.Alive then
+        return false
+    end
+
+    if Runtime.Busy then
+        return false
+    end
+
+    local previousAutoSell = Config.AutoSellLeftovers
+    Config.AutoSellLeftovers = true
+    Runtime.LastSellAt = 0
+
+    local ok, result = pcall(autoSellLeftoverBrainrots)
+
+    Config.AutoSellLeftovers = previousAutoSell
+
+    if not ok then
+        Runtime.Busy = false
+        Runtime.LastSellReason = tostring(result)
+        return false
+    end
+
+    return result == true
+end
+
 local function slotWorldPosition(slot)
     if not slot then
         return nil
@@ -7866,7 +7883,7 @@ Runtime.AutoClaimMailboxRewards = function()
 end
 
 Runtime.RewardsBackgroundIteration = function()
-    if not Runtime.Alive then
+    if not Runtime.Alive or not Config.Master then
         return
     end
 
@@ -7950,358 +7967,679 @@ end
 
 
 -- ============================================================================
--- UI
+-- OBSIDIAN UI
 -- ============================================================================
 
-local Window = ReefHubUI:CreateWindow({
-    Name = "ReefHub · Kick a Lucky Block",
-    GuiName = "ReefHub_KickALuckyBlock",
-    ConfigId = "KickALuckyBlock",
-    Width = 500,
-    Height = 560,
+local Window = Library:CreateWindow({
+    Title = "Kick a Lucky Block",
+    Footer = "Kick a Lucky Block | By PanjeGogo",
+    AutoShow = true,
+    NotifySide = "Right",
+    ShowCustomCursor = false,
 })
 
-local FarmTab = Window:CreateTab("Autofarm")
-local ProgressTab = Window:CreateTab("Progress")
-local RewardsTab = Window:CreateTab("Rewards")
-local EventsTab = Window:CreateTab("Events")
-local TutorialTab = Window:CreateTab("Tutorial")
-local SettingsTab = Window:CreateTab("Settings")
+local Tabs = {
+    farming = Window:AddTab("Autofarm", "zap"),
+    progress = Window:AddTab("Progress", "trending-up"),
+    rewards = Window:AddTab("Rewards", "gift"),
+    events = Window:AddTab("Events", "flame"),
+    tutorial = Window:AddTab("Tutorial", "book-open"),
+}
+local SettingsTab = Window:AddTab("Settings", "settings")
 
-FarmTab:CreateSection("Smart Autofarm")
-FarmTab:CreateToggle({
-    Name="Enable Smart Autofarm",
-    CurrentValue=Config.Master,
-    Flag="REEFHUB_Master_v30",
-    Callback=function(v)
-        Config.Master=v
-        if not v then
+local FarmBox = Tabs.farming:AddLeftGroupbox("Smart Autofarm", "zap")
+local TravelBox = Tabs.farming:AddRightGroupbox("Travel & Kick", "map")
+local StatusBox = Tabs.farming:AddRightGroupbox("Live Status", "activity")
+
+FarmBox:AddLabel(
+    "All automation starts OFF. Enable Smart Autofarm first, then enable only the features you want.",
+    true
+)
+
+FarmBox:AddToggle("Master", {
+    Text = "Enable Smart Autofarm",
+    Default = Config.Master,
+    Callback = function(value)
+        Config.Master = value
+
+        if not value then
+            Runtime.NeedsImmediateTraining = false
+            Runtime.PendingRewardPlacement = false
+            Runtime.InTraining = false
+            pcall(releaseMovementKeys)
+            pcall(stopAutomatedWalk)
+            pcall(unequipAndUnanchor)
+            setState("Paused")
+        else
+            setState("Autofarm enabled")
+        end
+    end,
+})
+
+FarmBox:AddToggle("AutoKick", {
+    Text = "Auto Kick Lucky Blocks",
+    Default = Config.AutoKick,
+    Callback = function(value)
+        Config.AutoKick = value
+        if not value then
             pcall(releaseMovementKeys)
             pcall(stopAutomatedWalk)
         end
-    end
+    end,
 })
-FarmTab:CreateToggle({Name="Auto Kick Lucky Blocks", CurrentValue=Config.AutoKick, Flag="REEFHUB_AutoKick", Callback=function(v) Config.AutoKick=v end})
-FarmTab:CreateToggle({Name="Perfect Kick", CurrentValue=Config.PerfectKick, Flag="REEFHUB_PerfectKick", Callback=function(v) Config.PerfectKick=v end})
-FarmTab:CreateToggle({Name="Auto Return Reward To Base", CurrentValue=Config.TurboCollect, Flag="REEFHUB_ReturnReward_v22", Callback=function(v) Config.TurboCollect=v end})
 
-FarmTab:CreateDropdown({
-    Name="Travel Mode",
-    Options={"Walk","Teleport (Safe)","Manual"},
-    CurrentOption={normalizeTravelMode(Config.TravelMode)},
-    Flag="REEFHUB_TravelMode_v16",
-    Callback=function(option)
-        local value = type(option)=="table" and option[1] or option
+FarmBox:AddToggle("PerfectKick", {
+    Text = "Perfect Kick",
+    Default = Config.PerfectKick,
+    Callback = function(value)
+        Config.PerfectKick = value
+    end,
+})
+
+FarmBox:AddToggle("TurboCollect", {
+    Text = "Auto Return Reward To Base",
+    Default = Config.TurboCollect,
+    Callback = function(value)
+        Config.TurboCollect = value
+    end,
+})
+
+FarmBox:AddToggle("AutoTutorial", {
+    Text = "Auto Follow Tutorial",
+    Default = Config.AutoTutorial,
+    Callback = function(value)
+        Config.AutoTutorial = value
+    end,
+})
+
+TravelBox:AddDropdown("TravelMode", {
+    Values = {"Walk", "Teleport (Safe)", "Manual"},
+    Default = Config.TravelMode,
+    Text = "Travel Mode",
+    Callback = function(value)
         Config.TravelMode = normalizeTravelMode(value)
     end,
 })
 
-FarmTab:CreateDropdown({
-    Name="Kick Distance Mode",
-    Options={"Fast Rarity","Balanced Rarity","Max Distance"},
-    CurrentOption={Config.FarmKickMode},
-    Flag="REEFHUB_FarmKickMode_v453",
-    Callback=function(option)
-        local value = type(option)=="table" and option[1] or option
+TravelBox:AddDropdown("FarmKickMode", {
+    Values = {"Fast Rarity", "Balanced Rarity", "Max Distance"},
+    Default = Config.FarmKickMode,
+    Text = "Kick Distance Mode",
+    Callback = function(value)
         Config.FarmKickMode = tostring(value or "Max Distance")
     end,
 })
 
-FarmTab:CreateSlider({
-    Name="Rarity Distance Buffer",
-    Range={5,50}, Increment=1,
-    CurrentValue=Config.FarmRarityBuffer,
-    Suffix=" studs",
-    Flag="REEFHUB_RarityBuffer_v43",
-    Callback=function(v) Config.FarmRarityBuffer=v end,
-})
-
-
-FarmTab:CreateSlider({
-    Name="Open Inventory Lucky Block Every",
-    Range={1,10}, Increment=1,
-    CurrentValue=Config.LuckyBlockEveryKicks,
-    Suffix=" kicks",
-    Flag="REEFHUB_LuckyCadence_v44",
-    Callback=function(v) Config.LuckyBlockEveryKicks=v end,
-})
-
-FarmTab:CreateSlider({
-    Name="Post-Kick Cooldown", Range={0.2,2}, Increment=0.1, CurrentValue=Config.KickDelay,
-    Suffix=" s", Flag="REEFHUB_KickDelay_v464", Callback=function(v) Config.KickDelay=v end,
-})
-
-
-ProgressTab:CreateSection("Brainrots & Cash")
-ProgressTab:CreateToggle({Name="Auto Open Lucky Blocks", CurrentValue=Config.AutoOpenLuckyBlocks, Flag="REEFHUB_OpenBlocks", Callback=function(v) Config.AutoOpenLuckyBlocks=v end})
-ProgressTab:CreateToggle({Name="Auto Place Best Brainrot", CurrentValue=Config.AutoPlaceBest, Flag="REEFHUB_PlaceBest", Callback=function(v) Config.AutoPlaceBest=v end})
-ProgressTab:CreateToggle({Name="Replace Weaker Placed Brainrots", CurrentValue=Config.ReplaceWeak, Flag="REEFHUB_ReplaceWeak", Callback=function(v) Config.ReplaceWeak=v end})
-ProgressTab:CreateSlider({Name="Base Quality Improvement", Range={1,3}, Increment=0.05, CurrentValue=Config.ReplaceThreshold, Suffix="x", Flag="REEFHUB_BaseQualityThreshold_v462", Callback=function(v) Config.ReplaceThreshold=v end})
-ProgressTab:CreateToggle({Name="Auto Collect Base Cash", CurrentValue=Config.AutoCollectCash, Flag="REEFHUB_CollectCash", Callback=function(v) Config.AutoCollectCash=v end})
-ProgressTab:CreateSlider({Name="Cash Collect Interval", Range={0.25,10}, Increment=0.25, CurrentValue=Config.CashCollectInterval, Suffix=" s", Flag="REEFHUB_CashInterval", Callback=function(v) Config.CashCollectInterval=v end})
-ProgressTab:CreateToggle({Name="Auto Upgrade Brainrots", CurrentValue=Config.AutoUpgradeBrainrots, Flag="REEFHUB_UpgradeBrainrots_v457", Callback=function(v) Config.AutoUpgradeBrainrots=v end})
-ProgressTab:CreateSlider({
-    Name="Brainrot Upgrade Cash Budget",
-    Range={10,100}, Increment=5,
-    CurrentValue=math.floor(Config.BrainrotUpgradeSpendFraction*100+0.5),
-    Suffix="%",
-    Flag="REEFHUB_UpgradeBudget_v458",
-    Callback=function(v)
-        Config.BrainrotUpgradeSpendFraction =
-            math.clamp(v/100,0.10,1)
-    end,
-})
-ProgressTab:CreateSlider({
-    Name="Max Upgrades Per Background Pass",
-    Range={2,30}, Increment=1,
-    CurrentValue=Config.BrainrotUpgradeMaxPerPass,
-    Flag="REEFHUB_UpgradeBatch_v458",
-    Callback=function(v)
-        Config.BrainrotUpgradeMaxPerPass =
-            math.max(1, math.floor(v))
-    end,
-})
-ProgressTab:CreateSlider({
-    Name="Upgradeable Plot Fraction",
-    Range={25,100}, Increment=5,
-    CurrentValue=math.floor(Config.BrainrotUpgradeKeepFraction*100+0.5),
-    Suffix="%",
-    Flag="REEFHUB_UpgradeKeep_v458",
-    Callback=function(v)
-        Config.BrainrotUpgradeKeepFraction =
-            math.clamp(v/100,0.25,1)
-    end,
-})
-ProgressTab:CreateToggle({
-    Name="Auto Sell Leftover Inventory Brainrots",
-    CurrentValue=Config.AutoSellLeftovers,
-    Flag="REEFHUB_AutoSell_v45",
-    Callback=function(v) Config.AutoSellLeftovers=v end,
-})
-ProgressTab:CreateDropdown({
-    Name="Auto Sell Method",
-    Options={"Sell All UI","Selective Individual"},
-    CurrentOption={Config.SellMode},
-    Flag="REEFHUB_SellMode_v459",
-    Callback=function(option)
-        local value =
-            type(option)=="table"
-            and option[1]
-            or option
-
-        Config.SellMode =
-            tostring(value or "Sell All UI")
-    end,
-})
-ProgressTab:CreateToggle({
-    Name="Use Native Seller Teleport",
-    CurrentValue=Config.SellUseNativeSellerTeleport,
-    Flag="REEFHUB_SellerTeleport_v45",
-    Callback=function(v) Config.SellUseNativeSellerTeleport=v end,
-})
-ProgressTab:CreateSlider({
-    Name="Max Brainrots Per Sell Visit",
-    Range={1,20}, Increment=1,
-    CurrentValue=Config.SellMaxPerVisit,
-    Flag="REEFHUB_SellBatch_v458",
-    Callback=function(v) Config.SellMaxPerVisit=v end,
-})
-
-ProgressTab:CreateSection("Player Progression")
-ProgressTab:CreateToggle({Name="Auto Buy / Equip Best Weight", CurrentValue=Config.AutoBuyWeights, Flag="REEFHUB_BestWeight", Callback=function(v) Config.AutoBuyWeights=v end})
-ProgressTab:CreateToggle({Name="Auto Train Kick Power", CurrentValue=Config.AutoTrain, Flag="REEFHUB_AutoTrain", Callback=function(v) Config.AutoTrain=v end})
-ProgressTab:CreateToggle({
-    Name="Adaptive Distance Training",
-    CurrentValue=Config.AdaptiveTraining,
-    Flag="REEFHUB_AdaptiveTrain_v44",
-    Callback=function(v) Config.AdaptiveTraining=v end,
-})
-ProgressTab:CreateToggle({
-    Name="Smart Throughput Training",
-    CurrentValue=Config.SmartTrainingCadence,
-    Flag="REEFHUB_SmartTrain_v44",
-    Callback=function(v) Config.SmartTrainingCadence=v end,
-})
-ProgressTab:CreateSlider({
-    Name="Training Burst Every",
-    Range={1,6}, Increment=1,
-    CurrentValue=Config.TrainingBurstEveryKicks,
-    Suffix=" kicks",
-    Flag="REEFHUB_TrainCadence_v44",
-    Callback=function(v) Config.TrainingBurstEveryKicks=v end,
-})
-ProgressTab:CreateSlider({
-    Name="Training Burst Length",
-    Range={1,8}, Increment=0.5,
-    CurrentValue=Config.TrainingBurstSeconds,
-    Suffix=" s",
-    Flag="REEFHUB_TrainBurst_v44",
-    Callback=function(v) Config.TrainingBurstSeconds=v end,
-})
-ProgressTab:CreateSlider({
-    Name="Next Rarity Sprint Limit",
-    Range={3,15}, Increment=1,
-    CurrentValue=Config.NextRaritySprintMaxSeconds,
-    Suffix=" s",
-    Flag="REEFHUB_RaritySprint_v44",
-    Callback=function(v) Config.NextRaritySprintMaxSeconds=v end,
-})
-ProgressTab:CreateDropdown({
-    Name="Kick Style Selection",
-    Options={"Throughput","Max Multiplier"},
-    CurrentOption={Config.KickStyleMode},
-    Flag="REEFHUB_StyleMode_v44",
-    Callback=function(option)
-        local value = type(option)=="table" and option[1] or option
-        Config.KickStyleMode=tostring(value or "Throughput")
-    end,
-})
-ProgressTab:CreateSlider({
-    Name="Target Distance Gain / Kick",
-    Range={5,40}, Increment=1,
-    CurrentValue=Config.AdaptiveDistanceGain,
-    Suffix=" studs",
-    Flag="REEFHUB_AdaptiveDistance_v44",
-    Callback=function(v) Config.AdaptiveDistanceGain=v end,
-})
-ProgressTab:CreateSlider({
-    Name="Minimum Adaptive Training Time",
-    Range={1,12}, Increment=1,
-    CurrentValue=Config.AdaptiveMinTrainSeconds,
-    Suffix=" s",
-    Flag="REEFHUB_AdaptiveMinTrain_v44",
-    Callback=function(v) Config.AdaptiveMinTrainSeconds=v end,
-})
-ProgressTab:CreateSlider({
-    Name="Max Adaptive Training Time",
-    Range={4,25}, Increment=1,
-    CurrentValue=Config.AdaptiveMaxTrainSeconds,
-    Suffix=" s",
-    Flag="REEFHUB_AdaptiveMaxTrain_v44",
-    Callback=function(v) Config.AdaptiveMaxTrainSeconds=v end,
-})
-ProgressTab:CreateSlider({
-    Name="Fixed Train Time (Adaptive Off)",
-    Range={0,15}, Increment=0.25,
-    CurrentValue=Config.TrainBetweenKicks,
-    Suffix=" s",
-    Flag="REEFHUB_TrainBetween_v44",
-    Callback=function(v) Config.TrainBetweenKicks=v end,
-})
-ProgressTab:CreateToggle({Name="Auto Buy Speed", CurrentValue=Config.AutoBuySpeed, Flag="REEFHUB_AutoSpeed", Callback=function(v) Config.AutoBuySpeed=v end})
-ProgressTab:CreateToggle({Name="Auto Rebirth", CurrentValue=Config.AutoRebirth, Flag="REEFHUB_AutoRebirth", Callback=function(v) Config.AutoRebirth=v end})
-ProgressTab:CreateToggle({Name="Auto Buy / Equip Best Kick Style", CurrentValue=Config.AutoKickStyles, Flag="REEFHUB_KickStyles_v40", Callback=function(v) Config.AutoKickStyles=v end})
-
-ProgressTab:CreateToggle({Name="Auto Buy Plot Slots When Nearly Full", CurrentValue=Config.AutoBaseSlots, Flag="REEFHUB_BaseSlots_v40", Callback=function(v) Config.AutoBaseSlots=v end})
-ProgressTab:CreateSlider({
-    Name="Speed Spend Budget", Range={5,100}, Increment=5,
-    CurrentValue=math.floor(Config.SpeedSpendFraction*100+0.5), Suffix="%",
-    Flag="REEFHUB_SpeedBudget_v43",
-    Callback=function(v) Config.SpeedSpendFraction=math.clamp(v/100,0.05,1) end,
-})
-
-RewardsTab:CreateSection("Automatic Claims")
-RewardsTab:CreateToggle({Name="Auto Claim Free Shop Brainrot", CurrentValue=Config.AutoClaimFreeItem, Flag="REEFHUB_FreeItem_v40", Callback=function(v) Config.AutoClaimFreeItem=v; Runtime.FreeItemCheckedAt=0 end})
-RewardsTab:CreateToggle({Name="Auto Claim Offline Earnings", CurrentValue=Config.AutoClaimOffline, Flag="REEFHUB_Offline_v40", Callback=function(v) Config.AutoClaimOffline=v; if v then Runtime.OfflineClaimAttempted=false end end})
-RewardsTab:CreateToggle({Name="Auto Spin Free / Owned Wheel Spins", CurrentValue=Config.AutoWheelSpins, Flag="REEFHUB_Wheel_v40", Callback=function(v) Config.AutoWheelSpins=v end})
-RewardsTab:CreateToggle({Name="Auto Claim Training Bonus Popups", CurrentValue=Config.AutoKickBonuses, Flag="REEFHUB_KickBonus_v40", Callback=function(v) Config.AutoKickBonuses=v end})
-RewardsTab:CreateToggle({Name="Auto Claim Battle Pass Rewards", CurrentValue=Config.AutoBattlePassClaims, Flag="REEFHUB_BattlePass_v40", Callback=function(v) Config.AutoBattlePassClaims=v; Runtime.LastBattlePassClaim=0 end})
-RewardsTab:CreateToggle({
-    Name="Auto Check Mailbox Event Rewards",
-    CurrentValue=Config.AutoMailboxRewards,
-    Flag="REEFHUB_Mailbox_v45",
-    Callback=function(v)
-        Config.AutoMailboxRewards=v
-        Runtime.LastMailboxClaimAt=0
-    end,
-})
-RewardsTab:CreateToggle({Name="Try Group / Favorite Gift (If Eligible)", CurrentValue=Config.AutoGroupGift, Flag="REEFHUB_GroupGift_v40", Callback=function(v) Config.AutoGroupGift=v; if v then Runtime.GroupGiftAttempted=false end end})
-
-EventsTab:CreateSection("Gym Time / Lift Machine")
-EventsTab:CreateToggle({
-    Name="Prioritize Gym Time",
-    CurrentValue=Config.AutoGymTime,
-    Flag="REEFHUB_GymTime_v454",
-    Callback=function(v) Config.AutoGymTime=v end,
-})
-EventsTab:CreateToggle({
-    Name="Stay Until Event Ends",
-    CurrentValue=Config.GymTimeStayUntilEnd,
-    Flag="REEFHUB_GymStay_v454",
-    Callback=function(v) Config.GymTimeStayUntilEnd=v end,
-})
-EventsTab:CreateDropdown({
-    Name="Gym Event Travel",
-    Options={"Teleport (Safe)","Walk","Manual"},
-    CurrentOption={Config.GymEventTravelMode},
-    Flag="REEFHUB_GymTravel_v454",
-    Callback=function(option)
-        local value =
-            type(option)=="table"
-            and option[1]
-            or option
-
-        Config.GymEventTravelMode =
-            normalizeTravelMode(
-                tostring(value or "Teleport (Safe)")
-            )
+TravelBox:AddSlider("FarmRarityBuffer", {
+    Text = "Rarity Distance Buffer",
+    Default = Config.FarmRarityBuffer,
+    Min = 5,
+    Max = 50,
+    Rounding = 0,
+    Suffix = " studs",
+    Callback = function(value)
+        Config.FarmRarityBuffer = value
     end,
 })
 
-EventsTab:CreateSection("Back To School")
-EventsTab:CreateToggle({Name="Auto Craft Highest School Recipe", CurrentValue=Config.AutoSchoolCraft, Flag="REEFHUB_SchoolCraft_v40", Callback=function(v) Config.AutoSchoolCraft=v end})
-EventsTab:CreateToggle({Name="Auto Solve Math Event IDs", CurrentValue=Config.AutoSchoolMath, Flag="REEFHUB_SchoolMath_v40", Callback=function(v) Config.AutoSchoolMath=v end})
+TravelBox:AddSlider("LuckyBlockEveryKicks", {
+    Text = "Open Lucky Block Every",
+    Default = Config.LuckyBlockEveryKicks,
+    Min = 1,
+    Max = 10,
+    Rounding = 0,
+    Suffix = " kicks",
+    Callback = function(value)
+        Config.LuckyBlockEveryKicks = value
+    end,
+})
 
-EventsTab:CreateSection("Random Events")
-EventsTab:CreateToggle({Name="Auto Claim Mighty Chest Key", CurrentValue=Config.AutoMightyChest, Flag="REEFHUB_MightyChest_v40", Callback=function(v) Config.AutoMightyChest=v end})
+TravelBox:AddSlider("KickDelay", {
+    Text = "Post-Kick Cooldown",
+    Default = Config.KickDelay,
+    Min = 0.2,
+    Max = 2,
+    Rounding = 1,
+    Suffix = " s",
+    Callback = function(value)
+        Config.KickDelay = value
+    end,
+})
 
-TutorialTab:CreateSection("Tutorial Automation")
-TutorialTab:CreateToggle({Name="Auto Follow Tutorial", CurrentValue=Config.AutoTutorial, Flag="REEFHUB_AutoTutorial", Callback=function(v) Config.AutoTutorial=v end})
+local StatusLabel = StatusBox:AddLabel("State: Starting", true)
+local ExtraStatusLabel = StatusBox:AddLabel("Extra: --", true)
+local SellStatusLabel = StatusBox:AddLabel("Sell: --", true)
+
+StatusBox:AddButton({
+    Text = "Stop Autofarm",
+    Func = function()
+        Config.Master = false
+        Config.AutoKick = false
+        Config.AutoTrain = false
+        Config.AutoGymTime = false
+        Runtime.NeedsImmediateTraining = false
+        Runtime.PendingRewardPlacement = false
+        Runtime.InTraining = false
+        pcall(releaseMovementKeys)
+        pcall(stopAutomatedWalk)
+        pcall(unequipAndUnanchor)
+        setState("Paused")
+        Library:Notify({
+            Title = "Autofarm",
+            Description = "All active movement/training automation stopped.",
+            Time = 3,
+        })
+    end,
+})
+
+StatusBox:AddButton({
+    Text = "Sell Now",
+    Func = function()
+        task.spawn(function()
+            setState("Manual Sell")
+            local ok, result = pcall(Runtime.SellNow)
+
+            if ok and result then
+                Library:Notify({
+                    Title = "Sell Now",
+                    Description = "Sell operation completed.",
+                    Time = 3,
+                })
+            else
+                Library:Notify({
+                    Title = "Sell Now",
+                    Description = "No sale completed. Check the sell status.",
+                    Time = 3,
+                })
+            end
+        end)
+    end,
+})
+
+local ProgressFarmBox = Tabs.progress:AddLeftGroupbox("Brainrots & Cash", "box")
+local ProgressTrainBox = Tabs.progress:AddRightGroupbox("Training & Upgrades", "dumbbell")
+
+ProgressFarmBox:AddToggle("AutoOpenLuckyBlocks", {
+    Text = "Auto Open Lucky Blocks",
+    Default = Config.AutoOpenLuckyBlocks,
+    Callback = function(value) Config.AutoOpenLuckyBlocks = value end,
+})
+
+ProgressFarmBox:AddToggle("AutoPlaceBest", {
+    Text = "Auto Place Best Brainrot",
+    Default = Config.AutoPlaceBest,
+    Callback = function(value) Config.AutoPlaceBest = value end,
+})
+
+ProgressFarmBox:AddToggle("ReplaceWeak", {
+    Text = "Replace Weaker Placed Brainrots",
+    Default = Config.ReplaceWeak,
+    Callback = function(value) Config.ReplaceWeak = value end,
+})
+
+ProgressFarmBox:AddSlider("ReplaceThreshold", {
+    Text = "Base Quality Improvement",
+    Default = Config.ReplaceThreshold,
+    Min = 1,
+    Max = 3,
+    Rounding = 2,
+    Suffix = "x",
+    Callback = function(value) Config.ReplaceThreshold = value end,
+})
+
+ProgressFarmBox:AddToggle("AutoCollectCash", {
+    Text = "Auto Collect Base Cash",
+    Default = Config.AutoCollectCash,
+    Callback = function(value) Config.AutoCollectCash = value end,
+})
+
+ProgressFarmBox:AddSlider("CashCollectInterval", {
+    Text = "Cash Collect Interval",
+    Default = Config.CashCollectInterval,
+    Min = 0.25,
+    Max = 10,
+    Rounding = 2,
+    Suffix = " s",
+    Callback = function(value) Config.CashCollectInterval = value end,
+})
+
+ProgressFarmBox:AddToggle("AutoUpgradeBrainrots", {
+    Text = "Auto Upgrade Brainrots",
+    Default = Config.AutoUpgradeBrainrots,
+    Callback = function(value) Config.AutoUpgradeBrainrots = value end,
+})
+
+ProgressFarmBox:AddSlider("BrainrotUpgradeSpendFraction", {
+    Text = "Brainrot Upgrade Budget",
+    Default = math.floor(Config.BrainrotUpgradeSpendFraction * 100 + 0.5),
+    Min = 10,
+    Max = 100,
+    Rounding = 0,
+    Suffix = "%",
+    Callback = function(value)
+        Config.BrainrotUpgradeSpendFraction = math.clamp(value / 100, 0.10, 1)
+    end,
+})
+
+ProgressFarmBox:AddSlider("BrainrotUpgradeMaxPerPass", {
+    Text = "Max Upgrades Per Pass",
+    Default = Config.BrainrotUpgradeMaxPerPass,
+    Min = 2,
+    Max = 30,
+    Rounding = 0,
+    Callback = function(value)
+        Config.BrainrotUpgradeMaxPerPass = math.max(1, math.floor(value))
+    end,
+})
+
+ProgressFarmBox:AddSlider("BrainrotUpgradeKeepFraction", {
+    Text = "Upgradeable Plot Fraction",
+    Default = math.floor(Config.BrainrotUpgradeKeepFraction * 100 + 0.5),
+    Min = 25,
+    Max = 100,
+    Rounding = 0,
+    Suffix = "%",
+    Callback = function(value)
+        Config.BrainrotUpgradeKeepFraction = math.clamp(value / 100, 0.25, 1)
+    end,
+})
+
+ProgressFarmBox:AddToggle("AutoSellLeftovers", {
+    Text = "Auto Sell Leftover Brainrots",
+    Default = Config.AutoSellLeftovers,
+    Callback = function(value)
+        Config.AutoSellLeftovers = value
+        if not value then
+            pcall(releaseMovementKeys)
+            pcall(stopAutomatedWalk)
+            if not Runtime.InTraining then
+                pcall(unequipAndUnanchor)
+            end
+            Runtime.LastSellReason = "Auto Sell disabled"
+            setState("Auto Sell disabled")
+        else
+            Runtime.LastSellAt = 0
+        end
+    end,
+})
+
+ProgressFarmBox:AddDropdown("SellMode", {
+    Values = {"Sell All UI", "Selective Individual"},
+    Default = Config.SellMode,
+    Text = "Auto Sell Method",
+    Callback = function(value)
+        Config.SellMode = tostring(value or "Sell All UI")
+    end,
+})
+
+ProgressFarmBox:AddToggle("SellUseNativeSellerTeleport", {
+    Text = "Use Native Seller Teleport",
+    Default = Config.SellUseNativeSellerTeleport,
+    Callback = function(value) Config.SellUseNativeSellerTeleport = value end,
+})
+
+ProgressFarmBox:AddSlider("SellMaxPerVisit", {
+    Text = "Max Brainrots Per Visit",
+    Default = Config.SellMaxPerVisit,
+    Min = 1,
+    Max = 20,
+    Rounding = 0,
+    Callback = function(value) Config.SellMaxPerVisit = math.floor(value) end,
+})
+
+ProgressFarmBox:AddButton({
+    Text = "Sell Leftovers Now",
+    Func = function()
+        task.spawn(function()
+            local ok, result = pcall(Runtime.SellNow)
+            Library:Notify({
+                Title = "Sell Now",
+                Description = ok and result and "Sale completed." or "No sale completed.",
+                Time = 3,
+            })
+        end)
+    end,
+})
+
+ProgressTrainBox:AddToggle("AutoBuyWeights", {
+    Text = "Auto Buy / Equip Best Weight",
+    Default = Config.AutoBuyWeights,
+    Callback = function(value) Config.AutoBuyWeights = value end,
+})
+
+ProgressTrainBox:AddToggle("AutoTrain", {
+    Text = "Auto Train Kick Power",
+    Default = Config.AutoTrain,
+    Callback = function(value)
+        Config.AutoTrain = value
+        if not value then
+            Runtime.InTraining = false
+            pcall(unequipAndUnanchor)
+        end
+    end,
+})
+
+ProgressTrainBox:AddToggle("AdaptiveTraining", {
+    Text = "Adaptive Distance Training",
+    Default = Config.AdaptiveTraining,
+    Callback = function(value) Config.AdaptiveTraining = value end,
+})
+
+ProgressTrainBox:AddToggle("SmartTrainingCadence", {
+    Text = "Smart Throughput Training",
+    Default = Config.SmartTrainingCadence,
+    Callback = function(value) Config.SmartTrainingCadence = value end,
+})
+
+ProgressTrainBox:AddSlider("TrainingBurstEveryKicks", {
+    Text = "Training Burst Every",
+    Default = Config.TrainingBurstEveryKicks,
+    Min = 1,
+    Max = 6,
+    Rounding = 0,
+    Suffix = " kicks",
+    Callback = function(value) Config.TrainingBurstEveryKicks = math.floor(value) end,
+})
+
+ProgressTrainBox:AddSlider("TrainingBurstSeconds", {
+    Text = "Training Burst Length",
+    Default = Config.TrainingBurstSeconds,
+    Min = 1,
+    Max = 8,
+    Rounding = 1,
+    Suffix = " s",
+    Callback = function(value) Config.TrainingBurstSeconds = value end,
+})
+
+ProgressTrainBox:AddSlider("NextRaritySprintMaxSeconds", {
+    Text = "Next Rarity Sprint Limit",
+    Default = Config.NextRaritySprintMaxSeconds,
+    Min = 3,
+    Max = 15,
+    Rounding = 0,
+    Suffix = " s",
+    Callback = function(value) Config.NextRaritySprintMaxSeconds = value end,
+})
+
+ProgressTrainBox:AddDropdown("KickStyleMode", {
+    Values = {"Throughput", "Max Multiplier"},
+    Default = Config.KickStyleMode,
+    Text = "Kick Style Selection",
+    Callback = function(value) Config.KickStyleMode = tostring(value or "Throughput") end,
+})
+
+ProgressTrainBox:AddSlider("AdaptiveDistanceGain", {
+    Text = "Target Distance Gain / Kick",
+    Default = Config.AdaptiveDistanceGain,
+    Min = 5,
+    Max = 40,
+    Rounding = 0,
+    Suffix = " studs",
+    Callback = function(value) Config.AdaptiveDistanceGain = value end,
+})
+
+ProgressTrainBox:AddSlider("AdaptiveMinTrainSeconds", {
+    Text = "Minimum Adaptive Training",
+    Default = Config.AdaptiveMinTrainSeconds,
+    Min = 1,
+    Max = 12,
+    Rounding = 0,
+    Suffix = " s",
+    Callback = function(value) Config.AdaptiveMinTrainSeconds = value end,
+})
+
+ProgressTrainBox:AddSlider("AdaptiveMaxTrainSeconds", {
+    Text = "Max Adaptive Training",
+    Default = Config.AdaptiveMaxTrainSeconds,
+    Min = 4,
+    Max = 25,
+    Rounding = 0,
+    Suffix = " s",
+    Callback = function(value) Config.AdaptiveMaxTrainSeconds = value end,
+})
+
+ProgressTrainBox:AddSlider("TrainBetweenKicks", {
+    Text = "Fixed Train Time",
+    Default = Config.TrainBetweenKicks,
+    Min = 0,
+    Max = 15,
+    Rounding = 2,
+    Suffix = " s",
+    Callback = function(value) Config.TrainBetweenKicks = value end,
+})
+
+ProgressTrainBox:AddToggle("AutoBuySpeed", {
+    Text = "Auto Buy Speed",
+    Default = Config.AutoBuySpeed,
+    Callback = function(value) Config.AutoBuySpeed = value end,
+})
+
+ProgressTrainBox:AddToggle("AutoRebirth", {
+    Text = "Auto Rebirth",
+    Default = Config.AutoRebirth,
+    Callback = function(value) Config.AutoRebirth = value end,
+})
+
+ProgressTrainBox:AddToggle("AutoKickStyles", {
+    Text = "Auto Buy / Equip Best Kick Style",
+    Default = Config.AutoKickStyles,
+    Callback = function(value) Config.AutoKickStyles = value end,
+})
+
+ProgressTrainBox:AddToggle("AutoBaseSlots", {
+    Text = "Auto Buy Plot Slots",
+    Default = Config.AutoBaseSlots,
+    Callback = function(value) Config.AutoBaseSlots = value end,
+})
+
+ProgressTrainBox:AddSlider("SpeedSpendFraction", {
+    Text = "Speed Spend Budget",
+    Default = math.floor(Config.SpeedSpendFraction * 100 + 0.5),
+    Min = 5,
+    Max = 100,
+    Rounding = 0,
+    Suffix = "%",
+    Callback = function(value) Config.SpeedSpendFraction = math.clamp(value / 100, 0.05, 1) end,
+})
+
+local RewardBox = Tabs.rewards:AddLeftGroupbox("Automatic Claims", "gift")
+RewardBox:AddToggle("AutoClaimFreeItem", {
+    Text = "Auto Claim Free Shop Brainrot",
+    Default = Config.AutoClaimFreeItem,
+    Callback = function(value) Config.AutoClaimFreeItem = value; Runtime.FreeItemCheckedAt = 0 end,
+})
+RewardBox:AddToggle("AutoClaimOffline", {
+    Text = "Auto Claim Offline Earnings",
+    Default = Config.AutoClaimOffline,
+    Callback = function(value) Config.AutoClaimOffline = value; if value then Runtime.OfflineClaimAttempted = false end end,
+})
+RewardBox:AddToggle("AutoWheelSpins", {
+    Text = "Auto Spin Wheel",
+    Default = Config.AutoWheelSpins,
+    Callback = function(value) Config.AutoWheelSpins = value end,
+})
+RewardBox:AddToggle("AutoKickBonuses", {
+    Text = "Auto Claim Training Bonuses",
+    Default = Config.AutoKickBonuses,
+    Callback = function(value) Config.AutoKickBonuses = value end,
+})
+RewardBox:AddToggle("AutoBattlePassClaims", {
+    Text = "Auto Claim Battle Pass",
+    Default = Config.AutoBattlePassClaims,
+    Callback = function(value) Config.AutoBattlePassClaims = value; Runtime.LastBattlePassClaim = 0 end,
+})
+RewardBox:AddToggle("AutoMailboxRewards", {
+    Text = "Auto Check Mailbox Rewards",
+    Default = Config.AutoMailboxRewards,
+    Callback = function(value) Config.AutoMailboxRewards = value; Runtime.LastMailboxClaimAt = 0 end,
+})
+RewardBox:AddToggle("AutoGroupGift", {
+    Text = "Try Group / Favorite Gift",
+    Default = Config.AutoGroupGift,
+    Callback = function(value) Config.AutoGroupGift = value; if value then Runtime.GroupGiftAttempted = false end end,
+})
+
+local EventBox = Tabs.events:AddLeftGroupbox("Gym Time / Lift Machine", "dumbbell")
+EventBox:AddToggle("AutoGymTime", {
+    Text = "Prioritize Gym Time",
+    Default = Config.AutoGymTime,
+    Callback = function(value) Config.AutoGymTime = value end,
+})
+EventBox:AddToggle("GymTimeStayUntilEnd", {
+    Text = "Stay Until Event Ends",
+    Default = Config.GymTimeStayUntilEnd,
+    Callback = function(value) Config.GymTimeStayUntilEnd = value end,
+})
+EventBox:AddDropdown("GymEventTravelMode", {
+    Values = {"Teleport (Safe)", "Walk", "Manual"},
+    Default = Config.GymEventTravelMode,
+    Text = "Gym Event Travel",
+    Callback = function(value) Config.GymEventTravelMode = normalizeTravelMode(value) end,
+})
+
+local SchoolBox = Tabs.events:AddRightGroupbox("Back To School", "graduation-cap")
+SchoolBox:AddToggle("AutoSchoolCraft", {
+    Text = "Auto Craft Highest School Recipe",
+    Default = Config.AutoSchoolCraft,
+    Callback = function(value) Config.AutoSchoolCraft = value end,
+})
+SchoolBox:AddToggle("AutoSchoolMath", {
+    Text = "Auto Solve Math Event IDs",
+    Default = Config.AutoSchoolMath,
+    Callback = function(value) Config.AutoSchoolMath = value end,
+})
+SchoolBox:AddToggle("AutoMightyChest", {
+    Text = "Auto Claim Mighty Chest Key",
+    Default = Config.AutoMightyChest,
+    Callback = function(value) Config.AutoMightyChest = value end,
+})
+
+local TutorialBox = Tabs.tutorial:AddLeftGroupbox("Tutorial Automation", "book-open")
+TutorialBox:AddLabel(
+    "Tutorial automation is independent, but still requires Smart Autofarm to be enabled before the main loop acts.",
+    true
+)
+TutorialBox:AddToggle("TutorialEnabled", {
+    Text = "Auto Follow Tutorial",
+    Default = Config.AutoTutorial,
+    Callback = function(value) Config.AutoTutorial = value end,
+})
+
+local SettingsBox = SettingsTab:AddLeftGroupbox("Script", "settings")
+SettingsBox:AddLabel("Obsidian UI • no key system", true)
+SettingsBox:AddButton({
+    Text = "Stop All Automation",
+    Func = function()
+        Config.Master = false
+        Config.AutoKick = false
+        Config.AutoTrain = false
+        Config.AutoSellLeftovers = false
+        Config.AutoGymTime = false
+        Runtime.NeedsImmediateTraining = false
+        Runtime.PendingRewardPlacement = false
+        Runtime.InTraining = false
+        pcall(releaseMovementKeys)
+        pcall(stopAutomatedWalk)
+        pcall(unequipAndUnanchor)
+        setState("Paused")
+        Library:Notify({
+            Title = "Automation stopped",
+            Description = "All main automation flags are OFF.",
+            Time = 3,
+        })
+    end,
+})
+
+local StatusClock = 0
+Runtime.UIStatusTick = function()
+    if not StatusLabel then
+        return
+    end
+
+    local now = os.clock()
+    if now - StatusClock < 0.2 then
+        return
+    end
+    StatusClock = now
+
+    pcall(function()
+        StatusLabel:SetText("State: " .. tostring(Runtime.State or "--"))
+        ExtraStatusLabel:SetText("Extra: " .. tostring(Runtime.ExtraState or "--"))
+
+        local sellText = Runtime.LastSellReason or "idle"
+        if Runtime.LastSellCount and Runtime.LastSellCount > 0 then
+            sellText = sellText .. (" | sold %d"):format(Runtime.LastSellCount)
+        end
+        SellStatusLabel:SetText("Sell: " .. tostring(sellText))
+    end)
+end
+
+table.insert(Runtime.Connections, RunService.Heartbeat:Connect(function()
+    Runtime.UIStatusTick()
+end))
 
 Runtime.Cleanup = function()
     if not Runtime.Alive then
         return
     end
+
     Runtime.Alive = false
     Config.Master = false
+    Config.AutoKick = false
+    Config.AutoTrain = false
+    Config.AutoSellLeftovers = false
+    Config.AutoGymTime = false
+    Runtime.InTraining = false
+    Runtime.PendingRewardPlacement = false
+    Runtime.NeedsImmediateTraining = false
 
     for _, connection in ipairs(Runtime.Connections) do
-        pcall(function() connection:Disconnect() end)
+        pcall(function()
+            connection:Disconnect()
+        end)
     end
     table.clear(Runtime.Connections)
 
     pcall(releaseMovementKeys)
     pcall(stopAutomatedWalk)
     pcall(enablePlayerControls)
-    unequipAndUnanchor()
+    pcall(unequipAndUnanchor)
 end
 
 ENV.__REEFHUB_REEFHUB_CLEANUP = Runtime.Cleanup
 
-SettingsTab:CreateSection("Script")
-SettingsTab:CreateButton({
-    Name="Unload Autofarm",
-    NoConfig=true,
-    Callback=function()
-        Runtime.Cleanup()
-        pcall(function()
-            if Window and Window.Destroy then
-                Window:Destroy()
-            end
-        end)
-    end,
-})
+pcall(function()
+    SaveManager:SetLibrary(Library)
+    SaveManager:IgnoreThemeSettings()
+    SaveManager:SetFolder("PanjeGogo/KickALuckyBlock")
+    SaveManager:SetIgnoreIndexes({
+        "Master",
+        "AutoKick",
+        "AutoTrain",
+        "AutoSellLeftovers",
+        "AutoGymTime",
+    })
+    SaveManager:BuildConfigSection(SettingsTab)
+end)
 
+pcall(function()
+    ThemeManager:SetLibrary(Library)
+    ThemeManager:SetFolder("PanjeGogo/KickALuckyBlock")
+    ThemeManager:ApplyToTab(SettingsTab)
+end)
+
+Library:OnUnload(Runtime.Cleanup)
 
 task.spawn(farmLoop)
 task.spawn(Runtime.FastProgressionBackgroundLoop)
 task.spawn(Runtime.RewardsBackgroundLoop)
 
-ReefHubUI:Notify({
-    Title="Kick a Lucky Block",
-    Content="Autofarm ready • server-ready kick protection enabled",
-    Duration=2,
+Library:Notify({
+    Title = "Kick a Lucky Block",
+    Description = "Obsidian UI loaded. Automation is OFF by default.",
+    Time = 4,
 })
+
 
 return true
 

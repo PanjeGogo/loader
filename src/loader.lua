@@ -675,16 +675,27 @@ local function tableLen(t)
 end
 
 local MAPS = {
-    ["129827112113663"] = "prospecting"
+    -- Prospecting
+    ["129827112113663"] = {
+        name = "prospecting",
+        requiresUtils = true
+    },
+
+    -- Kick a Lucky Block
+    ["89469502395769"] = {
+        name = "kick_a_lucky_block",
+        requiresUtils = false
+    }
 }
 
-local GAME_NAME = MAPS[GAME_ID]
+local GAME = MAPS[GAME_ID]
+local GAME_NAME = GAME and GAME.name
 
 local function run()
     local storage = newStorage()
     setupRegistry(storage)
 
-    if not GAME_NAME then
+    if not GAME then
         unsupported()
         return
     end
@@ -696,21 +707,23 @@ local function run()
         ShoppingMart = "utils/ShoppingMart.lua"
     }
 
-    local total, loaded = tableLen(mods), 0
+    if GAME.requiresUtils then
+        local total, loaded = tableLen(mods), 0
 
-    for name, path in pairs(mods) do
-        setProgress(0.18 + (loaded / math.max(total, 1)) * 0.56, name)
+        for name, path in pairs(mods) do
+            setProgress(0.18 + (loaded / math.max(total, 1)) * 0.56, name)
 
-        local mod, err = fetchModule(path)
-        if not mod then
-            warn("[Simple Scripts] [Loader] " .. tostring(err))
-            fail("FAILED " .. name .. ": " .. tostring(err))
-            return
+            local mod, err = fetchModule(path)
+            if not mod then
+                warn("[Simple Scripts] [Loader] " .. tostring(err))
+                fail("FAILED " .. name .. ": " .. tostring(err))
+                return
+            end
+
+            registerModule(storage, name, mod)
+            loaded = loaded + 1
+            task.wait(0.01)
         end
-
-        registerModule(storage, name, mod)
-        loaded = loaded + 1
-        task.wait(0.01)
     end
 
     setProgress(0.76, "Loading " .. GAME_NAME)

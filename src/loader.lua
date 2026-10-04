@@ -26,8 +26,8 @@ do
     env.__LOADER_ACTIVE = true
 end
 
-local CDNS = {"https://raw.githubusercontent.com/dawnpetal/loader/main/src/",
-              "https://cdn.jsdelivr.net/gh/dawnpetal/loader@main/src/"}
+local CDNS = {"https://raw.githubusercontent.com/PanjeGogo/loader/main/src/",
+              "https://cdn.jsdelivr.net/gh/PanjeGogo/loader@main/src/"}
 
 local GAME_ID = tostring(game.PlaceId)
 local TITLE = "Simple Scripts"

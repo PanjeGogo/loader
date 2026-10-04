@@ -2748,11 +2748,30 @@ function setFastFarmKickPower()
         1,
         math.floor(power * percent + 0.5)
     )
+    local desiredText = tostring(desiredPower)
 
-    textBox.Text = tostring(desiredPower)
+    -- Do not fire FocusLost when the value is already correct. On mobile
+    -- executors this can re-enter the game's SetKickPower controller while
+    -- the player is entering KickReady and may lock the client.
+    if tostring(textBox.Text or "") == desiredText then
+        Runtime.LastKickPowerUiSetAt = os.clock()
+        Runtime.ExtraState = (
+            "Fast target %s • %.0f studs • %.0f%% power • already set"
+        ):format(
+            tostring(rarity),
+            targetDistance,
+            percent * 100
+        )
+        return true
+    end
+
+    textBox.Text = desiredText
 
     local fired = false
 
+    -- Prefer the normal TextBox FocusLost route only when the value actually
+    -- changed. This keeps the game's own kick-power handler intact without
+    -- repeatedly firing it while walking into KickReady.
     if type(firesignal) == "function" then
         fired = pcall(function()
             firesignal(textBox.FocusLost, true)
@@ -3371,17 +3390,27 @@ local function performKick()
         Runtime.ExtraState = "Kick target • MAX DISTANCE • 100% power"
     end
 
-    -- Deterministic v2.0 path: trigger the game's own
-    -- canKick/startKicking InputAction. Its Pressed signal is connected to the
-    -- SAME PressedStart() callback as the visible KICK button.
+    -- Use the actual visible KICK button first. This is safer on mobile
+    -- because it follows the game's normal Activated path and does not mutate
+    -- InputContext/InputBinding while the player is entering KickReady.
     if not minigameActive() then
-        setState("Triggering game startKicking action")
+        setState("Pressing native KICK button")
 
-        local started, startReason = startKickThroughInputAction()
+        local started = clickGuiButton(button)
+
+        -- Only use the InputAction route as a fallback if the visible button
+        -- could not be activated.
         if not started then
-            Runtime.Busy = false
-            setState("Start action failed: " .. tostring(startReason))
-            return false
+            setState("KICK button activation unavailable • trying input action")
+
+            local startReason
+            started, startReason = startKickThroughInputAction()
+
+            if not started then
+                Runtime.Busy = false
+                setState("Start action failed: " .. tostring(startReason))
+                return false
+            end
         end
 
         local startDeadline = os.clock() + 2.5

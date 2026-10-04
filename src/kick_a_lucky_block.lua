@@ -7996,7 +7996,11 @@ end
 local Window = Library:CreateWindow({
     Title = "Kick a Lucky Block",
     Footer = "Kick a Lucky Block | By PanjeGogo",
+    Center = true,
     AutoShow = true,
+    Resizable = true,
+    MobileButtonsSide = "Left",
+    ToggleKeybind = Enum.KeyCode.RightControl,
     NotifySide = "Right",
     ShowCustomCursor = false,
 })

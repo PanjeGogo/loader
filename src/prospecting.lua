@@ -11047,30 +11047,117 @@ do
         return success and not State.AutoFarm.interrupted
     end
 
-    function AutoFarmModule.doAction(actionType, expectedRegion)
-        local ok, result = pcall(function()
-            -- handleAction owns pan validation/equip. Doing it here as well
-            -- can fire EquipRemote twice and break the pan action state.
-            if expectedRegion == "Deposit" and State.AutoFarm.sandCFrame
-                and not isAtSavedLocation(State.AutoFarm.sandCFrame, 25) then
-                return false
-            elseif expectedRegion == "Water" and State.AutoFarm.waterCFrame
-                and not isAtSavedLocation(State.AutoFarm.waterCFrame, 25) then
+    function AutoFarmModule.doAction(actionType)
+        local function alive()
+            return State.AutoFarm.active and not State.AutoFarm.interrupted
+        end
+
+        if not alive() then
+            return false
+        end
+
+        -- Always work with the current character/tool. The reference farm
+        -- operates directly on the equipped tool after teleporting.
+        local character = Player.Character
+        local root = character and character:FindFirstChild("HumanoidRootPart")
+        local tool = character and character:FindFirstChildOfClass("Tool")
+
+        -- If the pan is in a backpack, equip it and then reacquire the
+        -- character/tool because EquipRemote is asynchronous.
+        if not tool or tool:GetAttribute("ItemType") ~= "Pan" then
+            tool = PanModule.equipPan()
+            character = Player.Character
+            root = character and character:FindFirstChild("HumanoidRootPart")
+            tool = character and character:FindFirstChildOfClass("Tool")
+        end
+
+        if not root or not tool then
+            return false
+        end
+
+        local scripts = tool:FindFirstChild("Scripts")
+        if not scripts then
+            return false
+        end
+
+        if actionType == "Dig" then
+            local collect = scripts:FindFirstChild("Collect")
+            local toggle = scripts:FindFirstChild("ToggleShovelActive")
+            if not collect or not toggle then
                 return false
             end
 
-            local killSwitch = function()
-                return State.AutoFarm.active and not State.AutoFarm.interrupted
+            local stats = Player:FindFirstChild("Stats")
+            local fill = tonumber(tool:GetAttribute("Fill")) or 0
+            local capacity = stats and tonumber(stats:GetAttribute("Capacity")) or 0
+            if capacity <= 0 or fill >= capacity then
+                return true
             end
 
-            local r = PanModule.handleAction(State.AutoFarm.actionMode, actionType, true, killSwitch)
-            return r ~= "MAX_RETRY_FAIL" and r ~= "KILLED"
-        end)
+            -- Match the clean reference: mouse input + Collect(1) +
+            -- ToggleShovelActive(false), then let the outer state loop
+            -- return to this action until the pan reaches capacity.
+            pcall(function()
+                game:GetService("VirtualInputManager"):SendMouseButtonEvent(
+                    0, 0, 0, true, game, 0
+                )
+            end)
 
-        return ok and result
+            local ok = pcall(function()
+                collect:InvokeServer(1)
+            end)
+
+            pcall(function()
+                toggle:FireServer(false)
+            end)
+
+            return ok
+        end
+
+        if actionType == "Wash" then
+            local pan = scripts:FindFirstChild("Pan")
+            local shake = scripts:FindFirstChild("Shake")
+            if not pan or not shake then
+                return false
+            end
+
+            task.wait(0.5)
+
+            while alive() do
+                local currentTool = Player.Character and Player.Character:FindFirstChildOfClass("Tool")
+                local currentScripts = currentTool and currentTool:FindFirstChild("Scripts")
+                local currentPan = currentScripts and currentScripts:FindFirstChild("Pan")
+                local currentShake = currentScripts and currentScripts:FindFirstChild("Shake")
+                if not currentTool or not currentPan or not currentShake then
+                    return false
+                end
+
+                local currentFill = tonumber(currentTool:GetAttribute("Fill")) or 0
+                if currentFill <= 0 then
+                    return true
+                end
+
+                local panOK = pcall(function()
+                    currentPan:InvokeServer()
+                end)
+                pcall(function()
+                    currentShake:FireServer()
+                end)
+
+                if not panOK then
+                    return false
+                end
+
+                task.wait(0.1)
+            end
+
+            return false
+        end
+
+        return false
     end
 
-    function AutoFarmModule.performTask(taskName, nextTask, targetCFrame, actionType, expectedRegion)
+    function AutoFarmModule.performTask(taskName, nextTask, targetCFrame, actionType)
         TaskManager:setCurrentTask(taskName)
         TaskManager:setNextTask(nextTask)
 
@@ -11078,39 +11165,34 @@ do
             return false
         end
 
-        -- Movement locks the character to prevent rubber-banding.
-        -- Unlock before executing the actual pan action; the game's pan
-        -- remotes require the Humanoid to be in a normal playable state.
         if State.AutoFarm.locked then
             CharacterLock.unlock()
             State.AutoFarm.locked = false
         end
 
-        -- Give the character/network state a moment to settle after teleport.
-        task.wait(0.25)
-
-        if State.AutoFarm.interrupted then
-            return false
-        end
-
-        local root = Character and Character:FindFirstChild("HumanoidRootPart")
+        -- Important: reacquire the character after teleport. Do not use the
+        -- old Character/HumanoidRootPart references for the action gate.
+        local character = Player.Character
+        local root = character and character:FindFirstChild("HumanoidRootPart")
         if not root then
             return false
         end
 
-        -- The game's PointToRegion names are not stable enough to gate the
-        -- action. The saved-position check inside doAction is authoritative.
-        -- Requiring an exact region string here can silently block Dig/Wash
-        -- after a successful teleport.
-        TaskManager:setCurrentTask(nextTask or actionType)
-        TaskManager:setNextTask("AutoFarm")
+        task.wait(0.1)
 
-        if not AutoFarmModule.doAction(actionType, expectedRegion) then
+        if not State.AutoFarm.active or State.AutoFarm.interrupted then
             return false
         end
 
-        TaskManager:setCurrentTask("AutoFarm")
-        return true
+        TaskManager:setCurrentTask(nextTask or actionType)
+        TaskManager:setNextTask("AutoFarm")
+
+        local success = AutoFarmModule.doAction(actionType)
+        if success then
+            TaskManager:setCurrentTask("AutoFarm")
+        end
+
+        return success
     end
 
     function AutoFarmModule.checkAndDoSell()
@@ -11212,13 +11294,6 @@ do
             return
         end
 
-        if not State.AutoFarm.actionMode or State.AutoFarm.actionMode == "" then
-            Utility.createNotification("❌ Select farming mode!")
-            State.AutoFarm.active = false
-            State.AutoFarm.running = false
-            return
-        end
-
         if not (State.AutoFarm.sandCFrame and State.AutoFarm.waterCFrame) then
             Utility.createNotification("❌ Set locations!")
             State.AutoFarm.active = false
@@ -11230,76 +11305,60 @@ do
 
         task.spawn(function()
             while State.AutoFarm.active and State.AutoFarm.session == session do
-                local acquired = TaskManager:requestTask("AutoFarm", 1)
+                local ok = pcall(function()
+                    local character = Player.Character
+                    local tool = character and character:FindFirstChildOfClass("Tool")
 
-                if acquired then
-                    local hasTurn = TaskManager:waitForTurn("AutoFarm", 5)
-
-                    if hasTurn then
-                        local started = TaskManager:startTask("AutoFarm")
-
-                        if started then
-                            while State.AutoFarm.active and TaskManager:canRun("AutoFarm") do
-                                if State.AutoFarm.interrupted then
-                                    if State.AutoFarm.locked then
-                                        CharacterLock.unlock()
-                                        State.AutoFarm.locked = false
-                                    end
-
-                                    while State.AutoFarm.interrupted and State.AutoFarm.active do
-                                        task.wait(0.1)
-                                    end
-                                end
-
-                                local ok = pcall(function()
-                                    local panStatus = PanModule.getStatus()
-                                    if not panStatus then
-                                        task.wait(0.05)
-                                        return
-                                    end
-
-                                    AutoFarmModule.checkAndDoSell()
-
-                                    local taskSucceeded = false
-
-                                    if panStatus.isFull then
-                                        taskSucceeded = AutoFarmModule.performTask("MovingToWater", "WashPan",
-                                            State.AutoFarm.waterCFrame, "Wash", "Water")
-                                    else
-                                        taskSucceeded = AutoFarmModule.performTask("MovingToSand", "DigSand",
-                                            State.AutoFarm.sandCFrame, "Dig", "Deposit")
-                                    end
-
-                                    -- A single movement/action failure must not kill Auto Farm.
-                                    -- Keep the toggle active and retry on the next cycle.
-                                    if not taskSucceeded and State.AutoFarm.active and not State.AutoFarm.interrupted then
-                                        task.wait(0.5)
-                                    end
-                                end)
-
-                                if not ok then
-                                    if State.AutoFarm.locked then
-                                        CharacterLock.unlock()
-                                        State.AutoFarm.locked = false
-                                    end
-                                    task.wait(0.05)
-                                end
-
-                                task.wait(0.01)
-                            end
-
-                            TaskManager:finishTask("AutoFarm")
-                        else
-                            task.wait(0.1)
-                        end
+                    -- The reference script assumes an equipped pan. Our
+                    -- version additionally equips one when necessary.
+                    if not tool or tool:GetAttribute("ItemType") ~= "Pan" then
+                        tool = PanModule.equipPan()
                     end
-                else
-                    task.wait(0.1)
+
+                    character = Player.Character
+                    tool = character and character:FindFirstChildOfClass("Tool")
+                    local stats = Player:FindFirstChild("Stats")
+
+                    if not character or not tool or not stats then
+                        task.wait(0.1)
+                        return
+                    end
+
+                    local fill = tonumber(tool:GetAttribute("Fill")) or 0
+                    local capacity = tonumber(stats:GetAttribute("Capacity")) or 0
+
+                    if fill < capacity then
+                        -- Directly reproduce the reference state transition:
+                        -- teleport to sand, then perform Collect(1).
+                        AutoFarmModule.performTask(
+                            "MovingToSand",
+                            "DigSand",
+                            State.AutoFarm.sandCFrame,
+                            "Dig"
+                        )
+                    else
+                        -- Full pan: teleport to water and repeatedly Pan+Shake
+                        -- until Fill reaches zero.
+                        AutoFarmModule.performTask(
+                            "MovingToWater",
+                            "WashPan",
+                            State.AutoFarm.waterCFrame,
+                            "Wash"
+                        )
+                    end
+                end)
+
+                if not ok and State.AutoFarm.active then
+                    if State.AutoFarm.locked then
+                        CharacterLock.unlock()
+                        State.AutoFarm.locked = false
+                    end
                 end
+
+                task.wait(0.05)
             end
 
             local shouldNotifyStopped = State.AutoFarm.stopRequested and not State.ScriptUnloaded
-
             AutoFarmModule.teardown()
 
             if shouldNotifyStopped then
@@ -11308,13 +11367,7 @@ do
         end)
     end
 
-    function AutoFarmModule.stop()
-        State.AutoFarm.stopRequested = true
-        State.AutoFarm.toggleState = false
-        State.AutoFarm.active = false
-        State.AutoFarm.interrupted = false
-        State.AutoFarm.interruptReason = nil
-    end
+
 end
 
 local HuntingModule = {}

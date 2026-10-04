@@ -8197,7 +8197,8 @@ do
         if actionType == "Dig" then
             if not scripts.Collect or not scripts.ToggleShovelActive then return "FAIL" end
             if PanModule.getStatus().isFull then return "SUCCESS" end
-            if mode ~= "Instant" then return "FAIL" end
+            -- The clean reference uses the same Collect(1) path regardless of UI action-mode state.
+            -- Do not block the dig action because an old saved UI value is missing/unknown.
             if executeToCompletion then
                 return digToCapacity(scripts)
             end

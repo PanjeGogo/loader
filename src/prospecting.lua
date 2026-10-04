@@ -7856,7 +7856,9 @@ local State = {
         interrupted = false,
         interruptReason = nil,
         running = false,
-        stopRequested = false
+        stopRequested = false,
+        session = 0,
+        toggleState = false
     },
 
     Sell = {
@@ -11305,6 +11307,9 @@ do
             return
         end
 
+        State.AutoFarm.session = (State.AutoFarm.session or 0) + 1
+        local session = State.AutoFarm.session
+
         State.AutoFarm.active = true
         State.AutoFarm.running = true
         State.AutoFarm.interrupted = false
@@ -11335,7 +11340,7 @@ do
         Utility.createNotification("🚀 Starting!")
 
         task.spawn(function()
-            while State.AutoFarm.active do
+            while State.AutoFarm.active and State.AutoFarm.session == session do
                 local acquired = TaskManager:requestTask("AutoFarm", 1)
 
                 if acquired then
@@ -11416,6 +11421,7 @@ do
 
     function AutoFarmModule.stop()
         State.AutoFarm.stopRequested = true
+        State.AutoFarm.toggleState = false
         State.AutoFarm.active = false
         State.AutoFarm.interrupted = false
         State.AutoFarm.interruptReason = nil
@@ -12300,10 +12306,20 @@ local function initializeMainTab()
     end)
 
     SimpleUI:CreateToggle(AutoFarmSection.Container, "Enable Auto Farm", false, function(state)
+        State.AutoFarm.toggleState = state
+
         if state then
             AutoFarmModule.start()
         else
-            AutoFarmModule.stop()
+            -- Ignore a duplicate/spurious false callback while the toggle is
+            -- being initialized or refreshed by the UI. Only stop a running
+            -- session when the toggle remains disabled.
+            local session = State.AutoFarm.session
+            task.delay(0.35, function()
+                if not State.AutoFarm.toggleState and State.AutoFarm.session == session then
+                    AutoFarmModule.stop()
+                end
+            end)
         end
     end)
 

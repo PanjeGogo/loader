@@ -1946,8 +1946,7 @@ local function startNativeKickMinigame()
     end
 
     local ok, err = pcall(function()
-        primary.Anchored = true
-
+        -- Let the native controller own character state. Do not anchor the root.
         local alreadyActive = safeGet(kickMinigame, "InMinigame") == true
         if not alreadyActive then
             startFn(kickMinigame)
@@ -3353,35 +3352,32 @@ local function performKick()
         return false
     end
 
-    -- Claim the automation lock BEFORE moving toward KickReady. The progression
-    -- background worker also performs movement (plot/seller/training). Previously
-    -- it could start a second movement task while AutoKick was walking into
-    -- KickReady, producing competing Humanoid movement controllers exactly at
-    -- the game's KickReady transition.
+    -- Do not physically enter Areas.KickReady. That part is a game trigger
+    -- and the client freezes on its transition in this environment.
+    -- Start the game's native KickMinigame controller directly instead.
     Runtime.Busy = true
 
-    if not ensureKickZone() then
+    setState("Starting native KickMinigame")
+
+    local started, startReason = startNativeKickMinigame()
+    if not started then
         Runtime.Busy = false
-        setState("Waiting for KickReady")
+        setState("Native KickMinigame unavailable: " .. tostring(startReason))
         return false
     end
 
     local hud = findHUD()
     local button = hud and hud:FindFirstChild("KickButton")
-    if not button or not button:IsA("GuiButton") then
-        setState("Waiting for KICK button")
-        return false
-    end
 
-    if not button.Visible then
-        setState("Waiting for KICK button reset")
-        return false
+    if button and button:IsA("GuiButton") and not button.Visible then
+        button = nil
     end
 
     if not Runtime.KickServerReady(button) then
         if Runtime.KickErrorVisible() then
             Runtime.LastKickAttemptAt = os.clock()
         end
+        Runtime.Busy = false
         return false
     end
 

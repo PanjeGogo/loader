@@ -33,7 +33,7 @@ local CDNS = {"https://raw.githubusercontent.com/PanjeGogo/loader/main/src/",
 -- Kick a Lucky Block is pinned to the exact fixed commit containing the
 -- syntax fix. This prevents raw/CDN caches from serving the broken revision.
 local PINNED_GAME_REVISIONS = {
-    ["kick_a_lucky_block.lua"] = "efdd3c53eea858215b1f748a31264e4baa6ca150"
+    ["kick_a_lucky_block.lua"] = "5d41e452acaaf3a3d7cf850da23a382308fe8b71"
 }
 
 local GAME_ID = tostring(game.PlaceId)

@@ -3381,36 +3381,28 @@ local function performKick()
         Runtime.KickOriginCapturedAt = now
     end
 
-    -- Apply the selected distance using the game's normal SetKickPower state.
-    -- Max Distance writes the full current Kick Power every single kick.
-    setFastFarmKickPower()
-
+    -- IMPORTANT: do not rewrite SetKickPower or fire GUI/InputAction
+    -- connections here. Both operations can re-enter the game's controller
+    -- while the character is crossing KickReady and can hard-freeze the client.
+    -- Keep the first test completely native: only a real mouse/touch-style
+    -- click on the visible KICK button is allowed to start the round.
     if tostring(Config.FarmKickMode or "Max Distance") == "Max Distance" then
         Runtime.TargetKickPercent = 1
-        Runtime.ExtraState = "Kick target • MAX DISTANCE • 100% power"
+        Runtime.ExtraState = "Kick target • current power • native input only"
     end
 
-    -- Use the actual visible KICK button first. This is safer on mobile
-    -- because it follows the game's normal Activated path and does not mutate
-    -- InputContext/InputBinding while the player is entering KickReady.
     if not minigameActive() then
-        setState("Pressing native KICK button")
+        setState("Pressing KICK with native input")
 
-        local started = clickGuiButton(button)
+        -- physicalClickGuiButton ultimately uses the executor's mouse input
+        -- API; it does not call Activated/Firesignal and therefore avoids
+        -- executing the game's callback stack recursively.
+        local started = physicalClickGuiButton(button)
 
-        -- Only use the InputAction route as a fallback if the visible button
-        -- could not be activated.
         if not started then
-            setState("KICK button activation unavailable • trying input action")
-
-            local startReason
-            started, startReason = startKickThroughInputAction()
-
-            if not started then
-                Runtime.Busy = false
-                setState("Start action failed: " .. tostring(startReason))
-                return false
-            end
+            Runtime.Busy = false
+            setState("Native KICK input unavailable")
+            return false
         end
 
         local startDeadline = os.clock() + 2.5

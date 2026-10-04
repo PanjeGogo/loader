@@ -96,7 +96,7 @@ local T = THEMES[math.random(1, #THEMES)]
 
 local function S(n)
     local cam = workspace.CurrentCamera
-    return math.floor(math.min(cam.ViewportSize.X / 1920, cam.ViewportSize.Y / 1080) * n + 0.5)
+    return math.floor(math.min(cam.ViewportSize.X / 1920, cam.ViewportSize.Y / 1080) * n * 2 + 0.5)
 end
 
 local function tw(obj, props, info)

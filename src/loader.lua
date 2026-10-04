@@ -121,8 +121,8 @@ local function fetch(path)
 
     if pinnedRevision then
         local pinnedUrls = {
-            "https://raw.githubusercontent.com/PanjeGogo/loader/" .. pinnedRevision .. "/src/" .. path,
-            "https://cdn.jsdelivr.net/gh/PanjeGogo/loader@" .. pinnedRevision .. "/src/" .. path
+            "https://raw.githubusercontent.com/PanjeGogo/loader/" .. pinnedRevision .. "/src/" .. path .. "?v=" .. pinnedRevision,
+            "https://cdn.jsdelivr.net/gh/PanjeGogo/loader@" .. pinnedRevision .. "/src/" .. path .. "?v=" .. pinnedRevision
         }
 
         for _, url in ipairs(pinnedUrls) do

@@ -8260,14 +8260,19 @@ local TravelBox = Tabs.farming:AddRightGroupbox("Travel & Kick", "map")
 local StatusBox = Tabs.farming:AddRightGroupbox("Live Status", "activity")
 
 FarmBox:AddLabel(
-    "All automation starts OFF. Enable Smart Autofarm first, then enable only the features you want.",
+    "Auto Kick controls Smart Autofarm and automatically starts/stops the kick cycle.",
     true
 )
 
-FarmBox:AddToggle("Master", {
-    Text = "Enable Smart Autofarm",
-    Default = Config.Master,
+-- Auto Kick is the single master switch for the kick automation.
+-- Keep Config.Master internally because the rest of the runtime uses it as
+-- the global automation gate, but do not expose a second toggle that users
+-- have to enable separately.
+FarmBox:AddToggle("AutoKick", {
+    Text = "Auto Kick Lucky Blocks",
+    Default = Config.AutoKick or Config.Master,
     Callback = function(value)
+        Config.AutoKick = value
         Config.Master = value
 
         if not value then
@@ -8279,19 +8284,7 @@ FarmBox:AddToggle("Master", {
             pcall(unequipAndUnanchor)
             setState("Paused")
         else
-            setState("Autofarm enabled")
-        end
-    end,
-})
-
-FarmBox:AddToggle("AutoKick", {
-    Text = "Auto Kick Lucky Blocks",
-    Default = Config.AutoKick,
-    Callback = function(value)
-        Config.AutoKick = value
-        if not value then
-            pcall(releaseMovementKeys)
-            pcall(stopAutomatedWalk)
+            setState("Autofarm enabled • Auto Kick")
         end
     end,
 })
@@ -8905,7 +8898,6 @@ local okManagers, managerError = xpcall(function()
     SaveManager:IgnoreThemeSettings()
     SaveManager:SetFolder("PanjeGogo/KickALuckyBlock")
     SaveManager:SetIgnoreIndexes({
-        "Master",
         "AutoKick",
         "AutoTrain",
         "AutoSellLeftovers",

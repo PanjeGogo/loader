@@ -11135,13 +11135,21 @@ do
                 end
             })
         else
-            Movement.teleportToTarget(targetObj.Position, {
+            local teleportResult = Movement.teleportToTarget(targetObj.Position, {
                 Mode = "Standard",
                 OnComplete = function(ok)
                     success = ok or false
                     completed = true
                 end
             })
+
+            -- Teleport mode can complete synchronously without firing OnComplete.
+            -- Consume the direct return value so AutoFarm does not wait for a
+            -- callback that will never arrive.
+            if teleportResult and not completed then
+                success = true
+                completed = true
+            end
         end
 
         local elapsed = 0

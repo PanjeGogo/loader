@@ -7855,7 +7855,8 @@ local State = {
         locked = false,
         interrupted = false,
         interruptReason = nil,
-        running = false
+        running = false,
+        stopRequested = false
     },
 
     Sell = {
@@ -11308,6 +11309,7 @@ do
         State.AutoFarm.running = true
         State.AutoFarm.interrupted = false
         State.AutoFarm.interruptReason = nil
+        State.AutoFarm.stopRequested = false
 
         if not State.AutoFarm.travelMode or State.AutoFarm.travelMode == "" then
             Utility.createNotification("❌ Select travel mode!")
@@ -11364,20 +11366,20 @@ do
 
                                     AutoFarmModule.checkAndDoSell()
 
+                                    local taskSucceeded = false
+
                                     if panStatus.isFull then
-                                        if not AutoFarmModule.performTask("MovingToWater", "WashPan",
-                                            State.AutoFarm.waterCFrame, "Wash", "Water") then
-                                            if not State.AutoFarm.interrupted then
-                                                State.AutoFarm.active = false
-                                            end
-                                        end
+                                        taskSucceeded = AutoFarmModule.performTask("MovingToWater", "WashPan",
+                                            State.AutoFarm.waterCFrame, "Wash", "Water")
                                     else
-                                        if not AutoFarmModule.performTask("MovingToSand", "DigSand",
-                                            State.AutoFarm.sandCFrame, "Dig", "Deposit") then
-                                            if not State.AutoFarm.interrupted then
-                                                State.AutoFarm.active = false
-                                            end
-                                        end
+                                        taskSucceeded = AutoFarmModule.performTask("MovingToSand", "DigSand",
+                                            State.AutoFarm.sandCFrame, "Dig", "Deposit")
+                                    end
+
+                                    -- A single movement/action failure must not kill Auto Farm.
+                                    -- Keep the toggle active and retry on the next cycle.
+                                    if not taskSucceeded and State.AutoFarm.active and not State.AutoFarm.interrupted then
+                                        task.wait(0.5)
                                     end
                                 end)
 
@@ -11402,12 +11404,18 @@ do
                 end
             end
 
+            local shouldNotifyStopped = State.AutoFarm.stopRequested and not State.ScriptUnloaded
+
             AutoFarmModule.teardown()
-            Utility.createNotification("🛑 Stopped")
+
+            if shouldNotifyStopped then
+                Utility.createNotification("🛑 Stopped")
+            end
         end)
     end
 
     function AutoFarmModule.stop()
+        State.AutoFarm.stopRequested = true
         State.AutoFarm.active = false
         State.AutoFarm.interrupted = false
         State.AutoFarm.interruptReason = nil

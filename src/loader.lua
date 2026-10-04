@@ -527,10 +527,11 @@ linkBtn.MouseLeave:Connect(function()
 end)
 
 local function fail(msg)
+    warn("[Simple Scripts] [Loader] " .. tostring(msg))
     setAccent(T.red)
     statusLabel.TextColor3 = T.red
-    statusLabel.Text = msg
-    task.delay(2.5, dismiss)
+    statusLabel.Text = tostring(msg)
+    task.delay(8, dismiss)
 end
 
 local function unsupported()
@@ -645,14 +646,24 @@ end
 local function fetchModule(path)
     local src = fetch(path)
     if not src then
-        return
+        return nil, "HTTP fetch failed: " .. path
     end
-    local fn = loadstring(src)
+
+    local fn, compileErr = loadstring(src)
     if not fn then
-        return
+        return nil, "Compile error in " .. path .. ": " .. tostring(compileErr)
     end
+
     local ok, result = pcall(fn)
-    return ok and type(result) == "table" and result or nil
+    if not ok then
+        return nil, "Runtime error in " .. path .. ": " .. tostring(result)
+    end
+
+    if type(result) ~= "table" then
+        return nil, "Module returned " .. type(result) .. " instead of table: " .. path
+    end
+
+    return result
 end
 
 local function tableLen(t)
@@ -690,9 +701,10 @@ local function run()
     for name, path in pairs(mods) do
         setProgress(0.18 + (loaded / math.max(total, 1)) * 0.56, name)
 
-        local mod = fetchModule(path)
+        local mod, err = fetchModule(path)
         if not mod then
-            fail("Failed: " .. name)
+            warn("[Simple Scripts] [Loader] " .. tostring(err))
+            fail("FAILED " .. name .. ": " .. tostring(err))
             return
         end
 
@@ -703,24 +715,29 @@ local function run()
 
     setProgress(0.76, "Loading " .. GAME_NAME)
 
-    local mainSrc = fetch(GAME_NAME .. ".lua")
+    local mainPath = GAME_NAME .. ".lua"
+    setProgress(0.82, "Fetching " .. mainPath)
+
+    local mainSrc = fetch(mainPath)
     if not mainSrc then
-        fail("Game file not found")
+        warn("[Simple Scripts] [Loader] HTTP fetch failed: " .. mainPath)
+        fail("FAILED fetch: " .. mainPath)
         return
     end
 
-    local main = loadstring(mainSrc)
+    local main, compileErr = loadstring(mainSrc)
     if not main then
-        fail("Compile error")
+        warn("[Simple Scripts] [Loader] Compile error in " .. mainPath .. ": " .. tostring(compileErr))
+        fail("FAILED compile: " .. tostring(compileErr))
         return
     end
 
-    setProgress(0.94, "Executing")
+    setProgress(0.94, "Executing " .. mainPath)
 
-    local ok, err = pcall(main)
+    local ok, runtimeErr = pcall(main)
     if not ok then
-        warn("[Simple Scripts] " .. tostring(err))
-        fail("Runtime error")
+        warn("[Simple Scripts] [Loader] Runtime error in " .. mainPath .. ": " .. tostring(runtimeErr))
+        fail("FAILED runtime: " .. tostring(runtimeErr))
         return
     end
 

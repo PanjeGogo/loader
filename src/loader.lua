@@ -433,7 +433,7 @@ local function sz(h)
 end
 
 local fadeTargets = {{card, "BackgroundTransparency", 1}, {cardStroke, "Transparency", 1},
-                     {titleLabel, "TextTransparency", 1}, {subLabel, "TextTransparency", 1},
+                     {titleLabel, "TextTransparency", 1}, {closeButton, "TextTransparency", 1}, {subLabel, "TextTransparency", 1},
                      {keyHeader, "TextTransparency", 1}, {keyValue, "TextTransparency", 1},
                      {statusLabel, "TextTransparency", 1}, {pctLabel, "TextTransparency", 1},
                      {track, "BackgroundTransparency", 1}, {bar, "BackgroundTransparency", 1},
@@ -471,6 +471,23 @@ local function dismiss()
         getgenv().__LOADER_ACTIVE = false
     end)
 end
+
+local closeButton = Instance.new("TextButton")
+closeButton.Name = "Close"
+closeButton.AnchorPoint = Vector2.new(1, 0)
+closeButton.Position = UDim2.new(1, 0, 0, -S(2))
+closeButton.Size = UDim2.fromOffset(S(30), S(30))
+closeButton.BackgroundTransparency = 1
+closeButton.Text = "×"
+closeButton.TextColor3 = T.text
+closeButton.Font = Enum.Font.GothamBold
+closeButton.TextSize = S(24)
+closeButton.AutoButtonColor = false
+closeButton.ZIndex = 20
+closeButton.Parent = card
+closeButton.MouseButton1Click:Connect(function()
+    dismiss()
+end)
 
 local function setAccent(col)
     bar.BackgroundColor3 = col

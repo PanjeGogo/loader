@@ -222,8 +222,39 @@ local Y_UHINT = Y_UMSG + ROW_H + S(6)
 local Y_ULINK = Y_UHINT + ROW_H + S(8)
 local H_UNSUP = PAD_TOP + Y_ULINK + ROW_H + PAD_BOT
 
+local function removeOldLoaders()
+    local parents = {}
+
+    pcall(function()
+        table.insert(parents, gethui())
+    end)
+
+    pcall(function()
+        table.insert(parents, Players.LocalPlayer:FindFirstChildOfClass("PlayerGui"))
+    end)
+
+    pcall(function()
+        table.insert(parents, game:GetService("CoreGui"))
+    end)
+
+    for _, parent in ipairs(parents) do
+        if parent then
+            for _, child in ipairs(parent:GetChildren()) do
+                if child:IsA("ScreenGui") and child:GetAttribute("PanjeGogoLoader") == true then
+                    pcall(function()
+                        child:Destroy()
+                    end)
+                end
+            end
+        end
+    end
+end
+
+removeOldLoaders()
+
 local gui = Instance.new("ScreenGui")
-gui.Name = HttpServ:GenerateGUID(false)
+gui.Name = "PanjeGogo_MainLoader"
+gui:SetAttribute("PanjeGogoLoader", true)
 gui.ResetOnSpawn = false
 gui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
 gui.IgnoreGuiInset = true

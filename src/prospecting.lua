@@ -8062,26 +8062,49 @@ local PanModule = {}
 do
     function PanModule.equipPan()
         local function findPan(container)
+            if not container then
+                return nil
+            end
+
             for _, v in ipairs(container:GetChildren()) do
                 if v:GetAttribute("ItemType") == "Pan" then
                     return v
                 end
             end
+
+            return nil
         end
 
-        local pan = findPan(Character) or findPan(Player.Backpack) or findPan(BackpackTwo)
-        if pan then
+        -- Never re-equip an already equipped pan. Re-firing EquipRemote can
+        -- interrupt the game's tool state and prevent Collect/Pan from working.
+        local equipped = findPan(Character)
+        if equipped then
+            return equipped
+        end
+
+        local pan = findPan(Player.Backpack) or findPan(BackpackTwo)
+        if not pan then
+            return nil
+        end
+
+        local ok = pcall(function()
             ReplicatedStorage.Remotes.CustomBackpack.EquipRemote:FireServer(pan)
+        end)
 
-            -- EquipRemote is asynchronous. Give the game a moment to move
-            -- the pan into the active character before reading its Scripts.
-            if not Character:FindFirstChild(pan.Name) then
-                task.wait(0.15)
-            end
-
-            local equipped = findPan(Character)
-            return equipped or pan
+        if not ok then
+            return nil
         end
+
+        -- EquipRemote is asynchronous. Wait for the actual pan instance to
+        -- appear under Character before accessing its Scripts folder.
+        for _ = 1, 20 do
+            equipped = findPan(Character)
+            if equipped then
+                return equipped
+            end
+            task.wait(0.05)
+        end
+
         return nil
     end
 
@@ -8146,7 +8169,17 @@ do
         executeToCompletion = executeToCompletion or false
 
         local function validatePan()
-            local pan = PanModule.equipPan()
+            -- Prefer the pan already in Character. Do not call EquipRemote
+            -- again during the same action.
+            local pan = nil
+            for _, child in ipairs(Character:GetChildren()) do
+                if child:GetAttribute("ItemType") == "Pan" then
+                    pan = child
+                    break
+                end
+            end
+
+            pan = pan or PanModule.equipPan()
             local folder = pan and pan:FindFirstChild("Scripts")
             if not folder then
                 Utility.createNotification("No Pan found.")
@@ -11195,11 +11228,8 @@ do
 
     function AutoFarmModule.doAction(actionType, expectedRegion)
         local ok, result = pcall(function()
-            local pan = PanModule.equipPan()
-            if not pan then
-                return false
-            end
-
+            -- handleAction owns pan validation/equip. Doing it here as well
+            -- can fire EquipRemote twice and break the pan action state.
             if expectedRegion == "Deposit" and State.AutoFarm.sandCFrame
                 and not isAtSavedLocation(State.AutoFarm.sandCFrame, 25) then
                 return false
@@ -11247,22 +11277,10 @@ do
             return false
         end
 
-        -- Verify the actual game region, not just the saved CFrame distance.
-        -- This prevents firing Dig/Wash while the teleport is still settling.
-        local regionOk = false
-        for _ = 1, 10 do
-            local region = PanModule.getRegion(root)
-            if region == expectedRegion then
-                regionOk = true
-                break
-            end
-            task.wait(0.1)
-        end
-
-        if not regionOk then
-            return false
-        end
-
+        -- The game's PointToRegion names are not stable enough to gate the
+        -- action. The saved-position check inside doAction is authoritative.
+        -- Requiring an exact region string here can silently block Dig/Wash
+        -- after a successful teleport.
         TaskManager:setCurrentTask(nextTask or actionType)
         TaskManager:setNextTask("AutoFarm")
 

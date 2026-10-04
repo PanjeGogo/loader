@@ -18,7 +18,10 @@ local CONFIG = {
 local State = {
     Logs = {},
     Minimized = false,
+    Unloaded = false,
 }
+
+local Connections = {}
 
 local function timestamp()
     return os.date("%H:%M:%S")
@@ -142,13 +145,25 @@ local levelColor = {
 }
 
 local function updateCanvas()
+    if State.Unloaded then
+        return
+    end
+
     task.defer(function()
+        if State.Unloaded or not console.Parent then
+            return
+        end
+
         console.CanvasSize = UDim2.fromOffset(0, layout.AbsoluteContentSize.Y + 14)
         console.CanvasPosition = Vector2.new(0, math.max(0, layout.AbsoluteContentSize.Y))
     end)
 end
 
 local function log(level, message)
+    if State.Unloaded then
+        return
+    end
+
     message = tostring(message)
 
     table.insert(State.Logs, {
@@ -200,11 +215,35 @@ local function button(name, text, x, width)
     return b
 end
 
-local copyButton = button("CopyLog", "COPY LOG", 10, 130)
-local clearButton = button("Clear", "CLEAR", 150, 130)
-local testButton = button("Test", "TEST LOGGER", 290, 140)
+local copyButton = button("CopyLog", "COPY LOG", 10, 100)
+local clearButton = button("Clear", "CLEAR", 118, 100)
+local testButton = button("Test", "TEST LOGGER", 226, 100)
+local unloadButton = button("Unload", "UNLOAD", 334, 96)
 
-copyButton.MouseButton1Click:Connect(function()
+local function unload()
+    if State.Unloaded then
+        return
+    end
+
+    State.Unloaded = true
+    status.Text = "● UNLOAD"
+    status.TextColor3 = Color3.fromRGB(240, 100, 100)
+
+    for _, connection in ipairs(Connections) do
+        pcall(function()
+            connection:Disconnect()
+        end)
+    end
+
+    table.clear(Connections)
+    State.Logs = {}
+
+    if gui and gui.Parent then
+        gui:Destroy()
+    end
+end
+
+table.insert(Connections, copyButton.MouseButton1Click:Connect(function()
     if #State.Logs == 0 then
         log("WARN", "Tidak ada log untuk disalin.")
         return
@@ -226,23 +265,25 @@ copyButton.MouseButton1Click:Connect(function()
     else
         log("WARN", "Clipboard API tidak tersedia.")
     end
-end)
+end))
 
-clearButton.MouseButton1Click:Connect(function()
+table.insert(Connections, clearButton.MouseButton1Click:Connect(function()
     State.Logs = {}
     clearVisualLogs()
     updateCanvas()
     log("INFO", "Console dibersihkan.")
-end)
+end))
 
-testButton.MouseButton1Click:Connect(function()
+table.insert(Connections, testButton.MouseButton1Click:Connect(function()
     log("INFO", "Test INFO berhasil.")
     log("SUCCESS", "Test SUCCESS berhasil.")
     log("WARN", "Test WARNING berhasil.")
     log("ERROR", "Test ERROR berhasil.")
-end)
+end))
 
-minimize.MouseButton1Click:Connect(function()
+table.insert(Connections, unloadButton.MouseButton1Click:Connect(unload))
+
+table.insert(Connections, minimize.MouseButton1Click:Connect(function()
     State.Minimized = not State.Minimized
 
     if State.Minimized then
@@ -252,29 +293,29 @@ minimize.MouseButton1Click:Connect(function()
         main.Size = UDim2.fromOffset(CONFIG.Width, CONFIG.Height)
         minimize.Text = "—"
     end
-end)
+end))
 
 local dragging = false
 local dragStart
 local startPosition
 
-header.InputBegan:Connect(function(input)
+table.insert(Connections, header.InputBegan:Connect(function(input)
     if input.UserInputType == Enum.UserInputType.MouseButton1
         or input.UserInputType == Enum.UserInputType.Touch then
         dragging = true
         dragStart = input.Position
         startPosition = main.Position
     end
-end)
+end))
 
-header.InputEnded:Connect(function(input)
+table.insert(Connections, header.InputEnded:Connect(function(input)
     if input.UserInputType == Enum.UserInputType.MouseButton1
         or input.UserInputType == Enum.UserInputType.Touch then
         dragging = false
     end
-end)
+end))
 
-UserInputService.InputChanged:Connect(function(input)
+table.insert(Connections, UserInputService.InputChanged:Connect(function(input)
     if not dragging then
         return
     end
@@ -292,7 +333,7 @@ UserInputService.InputChanged:Connect(function(input)
         startPosition.Y.Scale,
         startPosition.Y.Offset + delta.Y
     )
-end)
+end))
 
 log("INFO", "DebugHub V1 starting...")
 log("INFO", "UI initialized.")

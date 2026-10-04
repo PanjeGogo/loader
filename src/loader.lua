@@ -425,6 +425,8 @@ local QSOFT = TweenInfo.new(0.14, Enum.EasingStyle.Quad, Enum.EasingDirection.Ou
 
 local progress = 0
 local closing = false
+local gameUiReady = false
+local debugLines = {}
 
 local function sz(h)
     return UDim2.new(0, W, 0, h)
@@ -445,6 +447,15 @@ local function fadeAll(dur)
             [e[2]] = e[3]
         }, info)
     end
+end
+
+local function debugStatus(text)
+    text = tostring(text)
+    table.insert(debugLines, text)
+    if #debugLines > 4 then
+        table.remove(debugLines, 1)
+    end
+    subLabel.Text = table.concat(debugLines, "\n")
 end
 
 local function dismiss()
@@ -531,7 +542,7 @@ local function fail(msg)
     setAccent(T.red)
     statusLabel.TextColor3 = T.red
     statusLabel.Text = tostring(msg)
-    task.delay(8, dismiss)
+    gameUiReady = false
 end
 
 local function unsupported()
@@ -574,7 +585,6 @@ local function unsupported()
         end)
     end)
 
-    task.delay(9, dismiss)
 end
 
 local function cursorX()
@@ -707,6 +717,7 @@ local function run()
     end
 
     setProgress(0.08, "Connecting")
+    debugStatus("PlaceId: " .. GAME_ID)
 
     local mods = {
         TaskManager = "utils/TaskManager.lua",
@@ -733,6 +744,7 @@ local function run()
     end
 
     setProgress(0.76, "Loading " .. GAME_NAME)
+    debugStatus("Game: " .. GAME_NAME)
 
     local mainPath = GAME_NAME .. ".lua"
     setProgress(0.82, "Fetching " .. mainPath)
@@ -752,6 +764,7 @@ local function run()
     end
 
     setProgress(0.94, "Executing " .. mainPath)
+    debugStatus("Executing: " .. mainPath)
 
     local ok, runtimeErr = pcall(main)
     if not ok then
@@ -760,18 +773,33 @@ local function run()
         return
     end
 
-    setProgress(1, "Done")
-    setAccent(T.green)
-    statusLabel.TextColor3 = T.green
-    task.delay(0.8, dismiss)
+    setProgress(1, "Waiting for game UI...")
+
+    -- The loader stays visible until the game script explicitly reports that
+    -- its real UI has been created. This makes failures visible instead of
+    -- silently closing the only useful diagnostic window.
+    local env = getgenv()
+    while not closing do
+        if env.__PANJEGOGO_GAME_UI_READY == true then
+            gameUiReady = true
+            setAccent(T.green)
+            statusLabel.TextColor3 = T.green
+            statusLabel.Text = "Game UI detected"
+            debugStatus("Game UI detected")
+            task.wait(0.8)
+            dismiss()
+            return
+        end
+        task.wait(0.25)
+    end
 end
 
 -- Start the visual intro before running the game loader.
--- Without this call, the card stays at size 0 and every label remains transparent.
 local introOk, introErr = xpcall(playIntro, debug.traceback)
 if not introOk then
     fail("FAILED loader UI: " .. tostring(introErr))
     return
 end
 
+debugStatus("Loader UI ready")
 task.spawn(run)

@@ -219,7 +219,7 @@ local Config = {
     Master = false,
     AutoTutorial = false,
     AutoKick = false,
-    PerfectKick = false,
+    PerfectKick = true,
     TurboCollect = false,
     TravelMode = "Walk", -- Walk / Teleport (Safe) / Manual
     KickDelay = 0.40,
@@ -1996,19 +1996,20 @@ local function finishNativeKickMinigame(scale)
         return false, "minigame is not active"
     end
 
-    -- Use the ACTUAL live minigame scale. Do not forge an instant 1.0 server
-    -- request. This mirrors the inspected OnInMinigame() client sequence:
-    -- KickMinigameUI:End(scale) -> GameHandler:Kick(scale).
-    local liveScale = tonumber(safeGet(kickMinigame, "Scale"))
-        or tonumber(scale)
-        or 0
-
-    liveScale = math.clamp(liveScale, 0, 1)
+    -- AutoKick always uses the Perfect path. The previous implementation
+    -- accidentally ignored the requested scale and reused the controller's
+    -- current Scale value, so the minigame could remain open or finish with
+    -- Good/Amazing. Use the scale captured at the Perfect threshold.
+    local perfectScale = math.clamp(
+        tonumber(scale) or tonumber(safeGet(kickMinigame, "Scale")) or 0.99,
+        0.99,
+        1
+    )
 
     local ok = pcall(function()
-        kickMinigame:End(liveScale)
+        kickMinigame:End(perfectScale)
         task.wait(0.05)
-        gameHandler:Kick(liveScale)
+        gameHandler:Kick(perfectScale)
     end)
 
     return ok, ok and nil or "native minigame finish failed"
@@ -8318,13 +8319,8 @@ FarmBox:AddToggle("AutoKick", {
     end,
 })
 
-FarmBox:AddToggle("PerfectKick", {
-    Text = "Perfect Kick",
-    Default = Config.PerfectKick,
-    Callback = function(value)
-        Config.PerfectKick = value
-    end,
-})
+-- Perfect Kick is built into Auto Kick; there is no separate toggle.
+Config.PerfectKick = true
 
 FarmBox:AddToggle("TurboCollect", {
     Text = "Auto Return Reward To Base",

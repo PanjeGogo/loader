@@ -8848,7 +8848,7 @@ end
 
 ENV.__REEFHUB_REEFHUB_CLEANUP = Runtime.Cleanup
 
-pcall(function()
+local okManagers, managerError = xpcall(function()
     SaveManager:SetLibrary(Library)
     SaveManager:IgnoreThemeSettings()
     SaveManager:SetFolder("PanjeGogo/KickALuckyBlock")
@@ -8860,13 +8860,22 @@ pcall(function()
         "AutoGymTime",
     })
     SaveManager:BuildConfigSection(SettingsTab)
-end)
 
-pcall(function()
     ThemeManager:SetLibrary(Library)
     ThemeManager:SetFolder("PanjeGogo/KickALuckyBlock")
     ThemeManager:ApplyToTab(SettingsTab)
-end)
+
+    -- Restore the same SaveManager startup flow used by the Obsidian source.
+    SaveManager:LoadAutoloadConfig()
+end, debug.traceback)
+
+if not okManagers then
+    Library:Notify({
+        Title = "Obsidian Addon Error",
+        Description = tostring(managerError),
+        Time = 8,
+    })
+end
 
 Library:OnUnload(Runtime.Cleanup)
 

@@ -11207,9 +11207,39 @@ do
             return false
         end
 
-        task.wait(0.1)
+        -- Movement locks the character to prevent rubber-banding.
+        -- Unlock before executing the actual pan action; the game's pan
+        -- remotes require the Humanoid to be in a normal playable state.
+        if State.AutoFarm.locked then
+            CharacterLock.unlock()
+            State.AutoFarm.locked = false
+        end
+
+        -- Give the character/network state a moment to settle after teleport.
+        task.wait(0.25)
 
         if State.AutoFarm.interrupted then
+            return false
+        end
+
+        local root = Character and Character:FindFirstChild("HumanoidRootPart")
+        if not root then
+            return false
+        end
+
+        -- Verify the actual game region, not just the saved CFrame distance.
+        -- This prevents firing Dig/Wash while the teleport is still settling.
+        local regionOk = false
+        for _ = 1, 10 do
+            local region = PanModule.getRegion(root)
+            if region == expectedRegion then
+                regionOk = true
+                break
+            end
+            task.wait(0.1)
+        end
+
+        if not regionOk then
             return false
         end
 

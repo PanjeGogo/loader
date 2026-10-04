@@ -111,7 +111,8 @@ end
 
 local function fetch(path)
     for _, cdn in ipairs(CDNS) do
-        local ok, body = pcall(game.HttpGetAsync, game, cdn .. path)
+        local cacheBust = "?v=" .. tostring(math.floor(tick() * 1000))
+        local ok, body = pcall(game.HttpGetAsync, game, cdn .. path .. cacheBust)
         if ok and body and body ~= "" then
             return body
         end

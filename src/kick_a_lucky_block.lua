@@ -2919,8 +2919,20 @@ local function serverKickRequest()
         return false, "ref_KickEvent not found"
     end
 
-    -- The captured live request uses:
-    -- ref_KickEvent:InvokeServer(1, 1, serverTimestamp)
+    -- Treat the first argument as the player's current position.
+    -- This keeps the request dynamic instead of sending a fixed coordinate.
+    local position
+    pcall(function()
+        local root = rootPart()
+        if root then
+            position = root.Position
+        end
+    end)
+
+    if typeof(position) ~= "Vector3" then
+        return false, "HumanoidRootPart position unavailable"
+    end
+
     -- Prefer Roblox's synchronized server clock when available.
     local timestamp
     pcall(function()
@@ -2932,7 +2944,7 @@ local function serverKickRequest()
     end
 
     local ok, result = pcall(function()
-        return remote:InvokeServer(1, 1, timestamp)
+        return remote:InvokeServer(position, 1, timestamp)
     end)
 
     if not ok then

@@ -42,7 +42,7 @@ SimpleUI.Constants = {
         ContentWidthScaleClosed = 1,
         HorizontalPadding = 10,
         VerticalPadding = 10,
-        DefaultScale = 0.75,
+        DefaultScale = 1.00,
         MinScale = 0.5,
         MaxScale = 2,
         TabModes = {
@@ -12133,7 +12133,7 @@ local window = SimpleUI:CreateWindow({
     Brand = {
         Name = "SimpleScripts"
     },
-    DefaultScale = SimpleUI.Utility:IsMobile() and 0.50 or 0.75,
+    DefaultScale = SimpleUI.Utility:IsMobile() and 0.85 or 1.00,
     TabMode = "Dynamic",
     CanResize = true,
     Footer = true,
@@ -13754,8 +13754,60 @@ local function initializeMiscellaneousTab()
     end)
 end
 
+local function unloadScript()
+    if State.ScriptUnloaded then return end
+    State.ScriptUnloaded = true
+
+    pcall(function() AutoFarmModule.stop() end)
+    pcall(function() HuntingModule.stopTreasureHunting() end)
+    pcall(function() HuntingModule.stopGeodeOpening() end)
+    pcall(function() ESPModule.disablePlayers() end)
+    pcall(function() ESPModule.disableTotems() end)
+    pcall(function() InventoryFilterModule.destroy() end)
+    pcall(function() ServerUtilityModule.setupAntiAFK(false) end)
+
+    State.AutoFarm.active = false
+    State.AutoFarm.running = false
+    State.AutoFarm.interrupted = true
+    State.Sell.autoSell = false
+
+    if State.Hunting then
+        State.Hunting.autoTreasure = false
+        State.Hunting.autoTreasureRunning = false
+    end
+    if State.Crafting then
+        State.Crafting.autocraft = false
+        State.Crafting.autocraftRunning = false
+    end
+    if State.Excavation then
+        State.Excavation.autoClaim = false
+        State.Excavation.autoStart = false
+        State.Excavation.autoStartRunning = false
+    end
+
+    pcall(function() BarrierRemovalModule.toggleVines(false) end)
+    pcall(function() BarrierRemovalModule.toggleAbyssalGate(false) end)
+    pcall(function() BarrierRemovalModule.toggleMountainBlock(false) end)
+
+    for _, uiWindow in pairs(SimpleUI.Windows) do
+        pcall(function() uiWindow:Destroy() end)
+    end
+end
+
 local function initializeSettingsTab()
     local page = Tabs.Settings.Page
+
+    local ScriptControlSection = SimpleUI:CreateSection(page, "Script Control", {
+        Style = "box",
+        DefaultExpanded = true,
+        TextSize = 16
+    })
+
+    SimpleUI:CreateButton(ScriptControlSection.Container, "Unload Script", function()
+        unloadScript()
+    end, {
+        Description = "Stop active features and completely remove the script interface."
+    })
 
     SimpleUI:CreateSection(page, "Interface Customization")
 

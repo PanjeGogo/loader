@@ -8192,6 +8192,9 @@ if not okWindow or not Window then
     error(err)
 end
 
+-- Signal the main loader only after the actual game UI exists.
+ENV.__PANJEGOGO_GAME_UI_READY = true
+
 destroyBootstrap()
 
 local Tabs = {

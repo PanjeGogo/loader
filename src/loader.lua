@@ -431,6 +431,9 @@ local progress = 0
 local closing = false
 local gameUiReady = false
 local debugLines = {}
+local copyCooldown = false
+local linkVisible = false
+local dismiss
 
 local function sz(h)
     return UDim2.new(0, W, 0, h)
@@ -479,7 +482,7 @@ local function debugStatus(text)
     subLabel.Text = table.concat(debugLines, "\n")
 end
 
-local function dismiss()
+function dismiss()
     if closing then
         return
     end
@@ -514,9 +517,6 @@ end
 local function setKey(value)
     keyValue.Text = value
 end
-
-local copyCooldown = false
-local linkVisible = false
 
 linkBtn.MouseButton1Click:Connect(function()
     if copyCooldown or not linkVisible then

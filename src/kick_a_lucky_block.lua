@@ -204,6 +204,8 @@ local Runtime = {
     LastSellerPromptAt = 0,
     SellFailures = 0,
     LastSellAllStage = nil,
+    SellCancel = false,
+    ManualSellActive = false,
 
     GymEventPriority = false,
     GymEventActive = false,
@@ -4350,7 +4352,7 @@ Runtime.WaitForSellerButton = function(finder, timeout)
     local deadline =
         os.clock() + math.max(0.25, tonumber(timeout) or 1.75)
 
-    while Runtime.Alive and os.clock() < deadline do
+    while Runtime.Alive and not Runtime.SellCancel and os.clock() < deadline do
         local button = finder()
 
         if button then
@@ -4364,6 +4366,10 @@ Runtime.WaitForSellerButton = function(finder, timeout)
 end
 
 Runtime.TrySellAllUI = function(expectedLeftovers)
+
+    if Runtime.SellCancel then
+        return false, 0
+    end
 
     local beforeCount =
         Runtime.InventoryEntityToolCount()
@@ -4462,7 +4468,7 @@ Runtime.TrySellAllUI = function(expectedLeftovers)
 
     local deadline = os.clock() + 2.5
 
-    while Runtime.Alive and os.clock() < deadline do
+    while Runtime.Alive and not Runtime.SellCancel and os.clock() < deadline do
         local remaining =
             Runtime.InventoryEntityToolCount()
 
@@ -4488,6 +4494,16 @@ end
 
 local function autoSellLeftoverBrainrots()
     if not Config.AutoSellLeftovers
+        and not Runtime.ManualSellActive
+    then
+        return false
+    end
+
+    if Runtime.SellCancel then
+        return false
+    end
+
+    Runtime.SellCancel = false
         or roundActive()
         or Runtime.Busy
         or Runtime.PendingRewardPlacement
@@ -4605,6 +4621,10 @@ local function autoSellLeftoverBrainrots()
                 or "using selective individual seller"
 
             for _, candidate in ipairs(candidates) do
+                if Runtime.SellCancel or not Runtime.Alive then
+                    break
+                end
+
                 if sold >= maxSell then
                     break
                 end
@@ -4770,12 +4790,15 @@ Runtime.SellNow = function()
     end
 
     local previousAutoSell = Config.AutoSellLeftovers
+    Runtime.ManualSellActive = true
+    Runtime.SellCancel = false
     Config.AutoSellLeftovers = true
     Runtime.LastSellAt = 0
 
     local ok, result = pcall(autoSellLeftoverBrainrots)
 
     Config.AutoSellLeftovers = previousAutoSell
+    Runtime.ManualSellActive = false
 
     if not ok then
         Runtime.Busy = false
@@ -8249,6 +8272,7 @@ ProgressFarmBox:AddToggle("AutoSellLeftovers", {
     Default = Config.AutoSellLeftovers,
     Callback = function(value)
         Config.AutoSellLeftovers = value
+        Runtime.SellCancel = not value
         if not value then
             pcall(releaseMovementKeys)
             pcall(stopAutomatedWalk)
@@ -8534,6 +8558,7 @@ SettingsBox:AddButton({
         Config.AutoKick = false
         Config.AutoTrain = false
         Config.AutoSellLeftovers = false
+        Runtime.SellCancel = true
         Config.AutoGymTime = false
         Runtime.NeedsImmediateTraining = false
         Runtime.PendingRewardPlacement = false
@@ -8588,6 +8613,7 @@ Runtime.Cleanup = function()
     Config.AutoKick = false
     Config.AutoTrain = false
     Config.AutoSellLeftovers = false
+    Runtime.SellCancel = true
     Config.AutoGymTime = false
     Runtime.InTraining = false
     Runtime.PendingRewardPlacement = false

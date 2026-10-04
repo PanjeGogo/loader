@@ -155,7 +155,8 @@ if ENV.__REEFHUB_REEFHUB_CLEANUP then
     pcall(ENV.__REEFHUB_REEFHUB_CLEANUP)
 end
 
-local repo = "https://raw.githubusercontent.com/deividcomsono/Obsidian/main/"
+-- Pin Obsidian to a known-good revision instead of tracking a moving main branch.
+local repo = "https://raw.githubusercontent.com/deividcomsono/Obsidian/2bf43254266f94492fe1f0fa12d181bb55e98f25/"
 
 local function loadRemote(path)
     local okHttp, src = pcall(function()
@@ -8174,15 +8175,14 @@ bootstrapStatus("Stage 3/3\nCreating Obsidian window...")
 
 local okWindow, Window = xpcall(function()
     return Library:CreateWindow({
-    Title = "Kick a Lucky Block",
-    Footer = "Kick a Lucky Block | By PanjeGogo",
-    Center = true,
-    AutoShow = true,
-    Resizable = true,
-    MobileButtonsSide = "Left",
-    ToggleKeybind = Enum.KeyCode.RightControl,
-    NotifySide = "Right",
-    ShowCustomCursor = false,
+        Title = "Kick a Lucky Block",
+        Footer = "Kick a Lucky Block | By PanjeGogo",
+        Center = true,
+        AutoShow = true,
+        Resizable = true,
+        MobileButtonsSide = "Left",
+        NotifySide = "Right",
+        ShowCustomCursor = false,
     })
 end, debug.traceback)
 

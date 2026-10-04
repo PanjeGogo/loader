@@ -30,6 +30,12 @@ end
 local CDNS = {"https://raw.githubusercontent.com/PanjeGogo/loader/main/src/",
               "https://cdn.jsdelivr.net/gh/PanjeGogo/loader@main/src/"}
 
+-- Kick a Lucky Block is pinned to the exact fixed commit containing the
+-- syntax fix. This prevents raw/CDN caches from serving the broken revision.
+local PINNED_GAME_REVISIONS = {
+    ["kick_a_lucky_block.lua"] = "e813e067636f23af6b5bbb716f661b751039efe3"
+}
+
 local GAME_ID = tostring(game.PlaceId)
 local TITLE = "Simple Scripts"
 local DISCORD = "discord.gg/5BUTb4vYm3"
@@ -111,6 +117,22 @@ local function fastwait(s)
 end
 
 local function fetch(path)
+    local pinnedRevision = PINNED_GAME_REVISIONS[path]
+
+    if pinnedRevision then
+        local pinnedUrls = {
+            "https://raw.githubusercontent.com/PanjeGogo/loader/" .. pinnedRevision .. "/src/" .. path,
+            "https://cdn.jsdelivr.net/gh/PanjeGogo/loader@" .. pinnedRevision .. "/src/" .. path
+        }
+
+        for _, url in ipairs(pinnedUrls) do
+            local ok, body = pcall(game.HttpGetAsync, game, url)
+            if ok and body and body ~= "" then
+                return body
+            end
+        end
+    end
+
     for _, cdn in ipairs(CDNS) do
         local cacheBust = "?v=" .. tostring(math.floor(tick() * 1000))
         local ok, body = pcall(game.HttpGetAsync, game, cdn .. path .. cacheBust)

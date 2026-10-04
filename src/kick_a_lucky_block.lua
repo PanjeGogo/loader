@@ -2301,10 +2301,35 @@ local function ensureKickZone()
         return false
     end
 
-    setState(mode == "Walk" and "Walking to kick zone" or "Safe teleport to kick zone")
-    moveTo(part, 10)
+    if mode == "Manual" then
+        setState("Walk into the kick zone")
+        return false
+    end
 
-    local deadline = os.clock() + 2.5
+    if mode == "Teleport (Safe)" then
+        setState("Safe teleport to kick zone")
+        moveTo(part, 10)
+    else
+        -- KickReady is a trigger zone. Do NOT use the script's PreRender movement
+        -- driver here: when the character touches this part the game's own client
+        -- controller changes state immediately. Repeated MoveTo/Move calls during
+        -- that transition can deadlock/freeze the mobile client.
+        setState("Walking to kick zone (native MoveTo)")
+
+        local root = rootPart()
+        local hum = humanoid()
+        local position = groundedTravelPosition(part)
+
+        if not root or not hum or not position then
+            return false
+        end
+
+        pcall(function()
+            hum:MoveTo(position)
+        end)
+    end
+
+    local deadline = os.clock() + 8
     while Runtime.Alive and os.clock() < deadline do
         hud = findHUD()
         kickButton = hud and hud:FindFirstChild("KickButton")
@@ -2316,6 +2341,7 @@ local function ensureKickZone()
         if isInsidePart(part) then
             return true
         end
+
         task.wait(0.05)
     end
 

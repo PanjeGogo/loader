@@ -24,6 +24,7 @@ do
         return
     end
     env.__LOADER_ACTIVE = true
+    env.__PANJEGOGO_GAME_UI_READY = false
 end
 
 local CDNS = {"https://raw.githubusercontent.com/PanjeGogo/loader/main/src/",
@@ -205,9 +206,10 @@ local STATUS_H = S(17)
 local STATUS_SIZE = S(13)
 local BAR_H = S(5)
 
+local DEBUG_H = S(72)
 local Y_TITLE = 0
 local Y_SUB = Y_TITLE + TITLE_H + S(8)
-local Y_KEY = Y_SUB + ROW_H + S(6)
+local Y_KEY = Y_SUB + DEBUG_H + S(8)
 local Y_STATUS = Y_KEY + ROW_H + S(20)
 local Y_BAR = Y_STATUS + STATUS_H + S(10)
 
@@ -286,14 +288,16 @@ cursor.Parent = card
 Instance.new("UICorner", cursor).CornerRadius = UDim.new(0, S(1))
 
 local subLabel = Instance.new("TextLabel")
-subLabel.Size = UDim2.new(1, 0, 0, ROW_H)
+subLabel.Size = UDim2.new(1, 0, 0, DEBUG_H)
 subLabel.Position = UDim2.fromOffset(0, Y_SUB + S(6))
 subLabel.BackgroundTransparency = 1
 subLabel.Text = "Fetching game details..."
 subLabel.TextColor3 = T.text
-subLabel.Font = Enum.Font.Gotham
-subLabel.TextSize = ROW_SIZE
+subLabel.Font = Enum.Font.Code
+subLabel.TextSize = S(14)
 subLabel.TextXAlignment = Enum.TextXAlignment.Left
+subLabel.TextYAlignment = Enum.TextYAlignment.Top
+subLabel.TextWrapped = true
 subLabel.TextTransparency = 1
 subLabel.Parent = card
 
@@ -432,6 +436,23 @@ local function sz(h)
     return UDim2.new(0, W, 0, h)
 end
 
+local closeButton = Instance.new("TextButton")
+closeButton.Name = "Close"
+closeButton.AnchorPoint = Vector2.new(1, 0)
+closeButton.Position = UDim2.new(1, 0, 0, -S(2))
+closeButton.Size = UDim2.fromOffset(S(30), S(30))
+closeButton.BackgroundTransparency = 1
+closeButton.Text = "×"
+closeButton.TextColor3 = T.text
+closeButton.Font = Enum.Font.GothamBold
+closeButton.TextSize = S(24)
+closeButton.AutoButtonColor = false
+closeButton.ZIndex = 20
+closeButton.Parent = card
+closeButton.MouseButton1Click:Connect(function()
+    dismiss()
+end)
+
 local fadeTargets = {{card, "BackgroundTransparency", 1}, {cardStroke, "Transparency", 1},
                      {titleLabel, "TextTransparency", 1}, {closeButton, "TextTransparency", 1}, {subLabel, "TextTransparency", 1},
                      {keyHeader, "TextTransparency", 1}, {keyValue, "TextTransparency", 1},
@@ -471,23 +492,6 @@ local function dismiss()
         getgenv().__LOADER_ACTIVE = false
     end)
 end
-
-local closeButton = Instance.new("TextButton")
-closeButton.Name = "Close"
-closeButton.AnchorPoint = Vector2.new(1, 0)
-closeButton.Position = UDim2.new(1, 0, 0, -S(2))
-closeButton.Size = UDim2.fromOffset(S(30), S(30))
-closeButton.BackgroundTransparency = 1
-closeButton.Text = "×"
-closeButton.TextColor3 = T.text
-closeButton.Font = Enum.Font.GothamBold
-closeButton.TextSize = S(24)
-closeButton.AutoButtonColor = false
-closeButton.ZIndex = 20
-closeButton.Parent = card
-closeButton.MouseButton1Click:Connect(function()
-    dismiss()
-end)
 
 local function setAccent(col)
     bar.BackgroundColor3 = col
@@ -555,10 +559,12 @@ linkBtn.MouseLeave:Connect(function()
 end)
 
 local function fail(msg)
-    warn("[Simple Scripts] [Loader] " .. tostring(msg))
+    msg = tostring(msg)
+    warn("[Simple Scripts] [Loader] " .. msg)
     setAccent(T.red)
     statusLabel.TextColor3 = T.red
-    statusLabel.Text = tostring(msg)
+    statusLabel.Text = "FAILED"
+    debugStatus(msg)
     gameUiReady = false
 end
 
@@ -750,7 +756,7 @@ local function run()
             local mod, err = fetchModule(path)
             if not mod then
                 warn("[Simple Scripts] [Loader] " .. tostring(err))
-                fail("FAILED " .. name .. ": " .. tostring(err))
+                fail(name .. ": " .. tostring(err))
                 return
             end
 
@@ -769,14 +775,14 @@ local function run()
     local mainSrc = fetch(mainPath)
     if not mainSrc then
         warn("[Simple Scripts] [Loader] HTTP fetch failed: " .. mainPath)
-        fail("FAILED fetch: " .. mainPath)
+        fail("HTTP fetch failed: " .. mainPath)
         return
     end
 
     local main, compileErr = loadstring(mainSrc)
     if not main then
         warn("[Simple Scripts] [Loader] Compile error in " .. mainPath .. ": " .. tostring(compileErr))
-        fail("FAILED compile: " .. tostring(compileErr))
+        fail("Compile error in " .. mainPath .. ": " .. tostring(compileErr))
         return
     end
 
@@ -786,7 +792,7 @@ local function run()
     local ok, runtimeErr = pcall(main)
     if not ok then
         warn("[Simple Scripts] [Loader] Runtime error in " .. mainPath .. ": " .. tostring(runtimeErr))
-        fail("FAILED runtime: " .. tostring(runtimeErr))
+        fail("Runtime error in " .. mainPath .. ": " .. tostring(runtimeErr))
         return
     end
 

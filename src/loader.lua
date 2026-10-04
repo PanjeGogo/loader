@@ -486,14 +486,18 @@ function dismiss()
     if closing then
         return
     end
+
     closing = true
     linkVisible = false
     cursor.Visible = false
-    fadeAll(0.30)
-    task.delay(0.38, function()
+
+    -- Close EVERYTHING belonging to the loader immediately.
+    -- This prevents debug/error TextLabels from remaining on screen.
+    pcall(function()
         gui:Destroy()
-        getgenv().__LOADER_ACTIVE = false
     end)
+
+    getgenv().__LOADER_ACTIVE = false
 end
 
 local function setAccent(col)

@@ -766,4 +766,12 @@ local function run()
     task.delay(0.8, dismiss)
 end
 
+-- Start the visual intro before running the game loader.
+-- Without this call, the card stays at size 0 and every label remains transparent.
+local introOk, introErr = xpcall(playIntro, debug.traceback)
+if not introOk then
+    fail("FAILED loader UI: " .. tostring(introErr))
+    return
+end
+
 task.spawn(run)

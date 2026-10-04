@@ -812,7 +812,7 @@ local function rarityIndexForDistance(distance)
     return index
 end
 
-local function fastFarmKickTarget(power)
+function fastFarmKickTarget(power)
     power = math.max(0, tonumber(power) or 0)
 
     if power <= 0 then
@@ -1428,7 +1428,7 @@ local function transformedRewardNames()
     return names
 end
 
-local function rewardNamesFromPayload(payload)
+function rewardNamesFromPayload(payload)
     local names = {}
 
     if type(payload) == "string" then
@@ -1451,7 +1451,7 @@ local function rewardNamesFromPayload(payload)
     return names
 end
 
-local function describeRewardNames()
+function describeRewardNames()
     local names = transformedRewardNames()
 
     if #names == 0 then
@@ -1470,7 +1470,7 @@ local function describeRewardNames()
 end
 
 
-local function findFrames()
+function findFrames()
     return PlayerGui:FindFirstChild("Frames")
 end
 
@@ -1833,7 +1833,7 @@ local function safeGet(tbl, key)
     return safeRawGet(tbl, key)
 end
 
-local function scanLoadedNativeControllers(force)
+function scanLoadedNativeControllers(force)
     if not force and os.clock() - NativeControllers.LastScan < 1 then
         return NativeControllers.GameHandler, NativeControllers.KickMinigame
     end
@@ -2418,7 +2418,7 @@ local ExecutorVirtualKeys = {
     [Enum.KeyCode.D] = 0x44,
 }
 
-local function sendMovementKeyState(keyCode, down)
+function sendMovementKeyState(keyCode, down)
     down = down == true
 
     if MovementKeyState[keyCode] == down then
@@ -2466,7 +2466,7 @@ local function releaseMovementKeys()
     end
 end
 
-local function applyWASDToWorldTarget(targetPosition)
+function applyWASDToWorldTarget(targetPosition)
     local root = rootPart()
     local camera = workspace.CurrentCamera
 
@@ -2534,7 +2534,7 @@ local function applyWASDToWorldTarget(targetPosition)
     return true, distance
 end
 
-local function triggerGameInputAction(contextName, actionName, temporaryKey)
+function triggerGameInputAction(contextName, actionName, temporaryKey)
     local context, action, binding = findGameInputAction(
         contextName,
         actionName,
@@ -2595,7 +2595,7 @@ local function triggerGameInputAction(contextName, actionName, temporaryKey)
     return true
 end
 
-local function startKickThroughInputAction()
+function startKickThroughInputAction()
     -- GameHandler.InitKeybinds creates:
     --   canKick -> startKicking
     -- and OnCanKick connects startKicking.Pressed to the exact same
@@ -2607,7 +2607,7 @@ local function startKickThroughInputAction()
     )
 end
 
-local function finishKickThroughInputAction()
+function finishKickThroughInputAction()
     -- During the real minigame GameHandler.OnInMinigame connects:
     --   Kick -> kick -> Pressed
     -- Its callback reads KickMinigameUI.Scale, calls End(scale), then Kick(scale).
@@ -2694,7 +2694,7 @@ local function pressNormalKickInput()
     return sendMouseClick(x, y)
 end
 
-local function fireGuiConnections(signal)
+function fireGuiConnections(signal)
     if type(getconnections) ~= "function" then
         return false
     end
@@ -2724,7 +2724,7 @@ local function fireGuiConnections(signal)
     return fired
 end
 
-local function setFastFarmKickPower()
+function setFastFarmKickPower()
     local power = math.max(0, currentKickPower())
     local percent, targetDistance, rarity, maxDistance =
         fastFarmKickTarget(power)
@@ -2778,7 +2778,7 @@ local function setFastFarmKickPower()
     return fired
 end
 
-local function physicalClickGuiButton(button)
+function physicalClickGuiButton(button)
     local center = button.AbsolutePosition + button.AbsoluteSize * 0.5
 
     -- First use the exact AbsolutePosition reported by Roblox.
@@ -2802,7 +2802,7 @@ local function physicalClickGuiButton(button)
     return false
 end
 
-local function clickGuiButton(button)
+function clickGuiButton(button)
     if not button or not button:IsA("GuiButton") then
         return false
     end
@@ -3274,7 +3274,7 @@ local function turboCollectKickReward()
 end
 
 
-local function snapshotEntityToolInstances()
+function snapshotEntityToolInstances()
     local snapshot = {}
     local backpack = LocalPlayer:FindFirstChild("Backpack")
     local char = character()
@@ -3649,7 +3649,7 @@ local function bestBrainrotTool()
 end
 
 
-local function freshEntityToolsSinceKick()
+function freshEntityToolsSinceKick()
     local result = {}
     local snapshot = Runtime.KickToolSnapshot or {}
 
@@ -3688,7 +3688,7 @@ local function freshEntityToolsSinceKick()
     return result
 end
 
-local function rewardNamedEntityTool()
+function rewardNamedEntityTool()
     local wanted = {}
 
     local function addPayload(payload)
@@ -3795,7 +3795,7 @@ local function plotSlots()
     return result
 end
 
-local function plotSlotByIndex(index)
+function plotSlotByIndex(index)
     for _, entry in ipairs(plotSlots()) do
         if entry.Index == index then
             return entry
@@ -4188,7 +4188,7 @@ local function waitForSoldTool(tool, timeout)
         )
 end
 
-local function schoolCraftProtectedTools(tools)
+function schoolCraftProtectedTools(tools)
     local protected = {}
 
     if not Config.AutoSchoolCraft then
@@ -5025,7 +5025,7 @@ local function brainrotToolScore(tool)
     )
 end
 
-local function brainrotActuallyImprovesPlot(
+function brainrotActuallyImprovesPlot(
     tier,
     quality,
     current,
@@ -5045,7 +5045,7 @@ local function brainrotActuallyImprovesPlot(
     )
 end
 
-local function choosePlotSlotForBrainrot(
+function choosePlotSlotForBrainrot(
     tier,
     quality,
     current,
@@ -5083,7 +5083,7 @@ local function choosePlotSlotForBrainrot(
     return nil, "NotBetter"
 end
 
-local function waitForBrainrotPlacement(tool, index, beforePart, timeout)
+function waitForBrainrotPlacement(tool, index, beforePart, timeout)
     local deadline = os.clock() + (timeout or 1.25)
 
     while Runtime.Alive and os.clock() < deadline do
@@ -5115,7 +5115,7 @@ local function waitForBrainrotPlacement(tool, index, beforePart, timeout)
     return false
 end
 
-local function placeBestBrainrot(forceAny, preferredSlot, preferredTool)
+function placeBestBrainrot(forceAny, preferredSlot, preferredTool)
     if not Config.AutoPlaceBest or roundActive() or Runtime.Busy then
         return false
     end
@@ -5241,7 +5241,7 @@ local function placeBestBrainrot(forceAny, preferredSlot, preferredTool)
     return false
 end
 
-local function reconcileBestInventoryBrainrots(maxPlacements)
+function reconcileBestInventoryBrainrots(maxPlacements)
     if not Config.AutoPlaceBest
         or roundActive()
         or Runtime.Busy
@@ -5699,7 +5699,7 @@ local function smartUpgradeCandidate(remainingBudget)
     return entries[1]
 end
 
-local function upgradeBrainrotsBatch(maxOverride)
+function upgradeBrainrotsBatch(maxOverride)
     if not Config.AutoUpgradeBrainrots
         or roundActive()
         or Runtime.Busy
@@ -5820,7 +5820,7 @@ local function estimateStyleCycleTime(style)
     return (style.PerfectLength or 3) + flight
 end
 
-local function bestAvailableKickStyle()
+function bestAvailableKickStyle()
     local mastery = math.max(0, currentKickMastery())
     local owned = Runtime.OwnedStyles or {}
     local mode = tostring(Config.KickStyleMode or "Throughput")
@@ -5860,7 +5860,7 @@ local function bestAvailableKickStyle()
     return best
 end
 
-local function buyOrEquipBestKickStyle()
+function buyOrEquipBestKickStyle()
     if not Config.AutoKickStyles or roundActive() or Runtime.Busy then
         return false
     end
@@ -5911,7 +5911,7 @@ end
 -- Weight / training / speed / rebirth
 -- ============================================================================
 
-local function refreshOwnedWeightsFromTools()
+function refreshOwnedWeightsFromTools()
     local owned = {}
     for _, tool in ipairs(allTools()) do
         if hasTag(tool, "SquatTool") or WeightByName[tool.Name] then
@@ -6041,7 +6041,7 @@ local function trainingMultiplierForButton(button)
     return nil
 end
 
-local function clickVisibleTrainingBonusPopups(force)
+function clickVisibleTrainingBonusPopups(force)
     if not Config.AutoKickBonuses or not Runtime.Alive then
         return 0
     end
@@ -6165,7 +6165,7 @@ captureActualKickDistance = function()
     return distance
 end
 
-local function calculateAdaptiveTrainingTarget()
+function calculateAdaptiveTrainingTarget()
     local power = math.max(0, currentKickPower())
     local pps = math.max(0.001, currentWeightPPS())
     local estimatedDistance = kickDistanceFromPower(power)
@@ -6273,7 +6273,7 @@ local function adaptiveTrainBeforeKick()
     return trained == true
 end
 
-local function smartTrainingBeforeKick()
+function smartTrainingBeforeKick()
     if not Config.AutoTrain or roundActive() then
         return false
     end
@@ -7603,7 +7603,7 @@ end
 -- Main loop
 -- ============================================================================
 
-local function maintenancePass()
+function maintenancePass()
     if Runtime.PendingRewardPlacement then
         setState("Pending kick reward • finishing collect/place cycle")
         placeFreshKickReward()

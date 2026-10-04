@@ -23,6 +23,132 @@ local GuiService = game:GetService("GuiService")
 local LocalPlayer = Players.LocalPlayer
 local PlayerGui = LocalPlayer:WaitForChild("PlayerGui")
 
+-- Native bootstrap UI: this appears before Obsidian is loaded, so a broken
+-- external UI library can no longer fail silently with a completely blank screen.
+local BootstrapGui
+local BootstrapLabel
+local BootstrapAlive = true
+
+local function getGuiParent()
+    local ok, result = pcall(function()
+        if type(gethui) == "function" then
+            return gethui()
+        end
+
+        local coreGui = game:GetService("CoreGui")
+        if coreGui then
+            return coreGui
+        end
+
+        return PlayerGui
+    end)
+
+    if ok and result then
+        return result
+    end
+
+    return PlayerGui
+end
+
+local function createBootstrap()
+    local ok, result = pcall(function()
+        local parent = getGuiParent()
+
+        local old = parent:FindFirstChild("PanjeGogo_KALB_Bootstrap")
+        if old then
+            old:Destroy()
+        end
+
+        local gui = Instance.new("ScreenGui")
+        gui.Name = "PanjeGogo_KALB_Bootstrap"
+        gui.ResetOnSpawn = false
+        gui.IgnoreGuiInset = true
+        gui.DisplayOrder = 2147483647
+        gui.ZIndexBehavior = Enum.ZIndexBehavior.Global
+        gui.Parent = parent
+
+        local frame = Instance.new("Frame")
+        frame.AnchorPoint = Vector2.new(0.5, 0.5)
+        frame.Position = UDim2.fromScale(0.5, 0.5)
+        frame.Size = UDim2.new(0, 420, 0, 150)
+        frame.BackgroundColor3 = Color3.fromRGB(20, 20, 24)
+        frame.BorderSizePixel = 0
+        frame.Parent = gui
+
+        local corner = Instance.new("UICorner")
+        corner.CornerRadius = UDim.new(0, 10)
+        corner.Parent = frame
+
+        local title = Instance.new("TextLabel")
+        title.BackgroundTransparency = 1
+        title.Position = UDim2.new(0, 18, 0, 14)
+        title.Size = UDim2.new(1, -36, 0, 30)
+        title.Font = Enum.Font.GothamBold
+        title.Text = "Kick a Lucky Block"
+        title.TextColor3 = Color3.fromRGB(255, 255, 255)
+        title.TextSize = 20
+        title.TextXAlignment = Enum.TextXAlignment.Left
+        title.Parent = frame
+
+        local label = Instance.new("TextLabel")
+        label.BackgroundTransparency = 1
+        label.Position = UDim2.new(0, 18, 0, 50)
+        label.Size = UDim2.new(1, -36, 0, 76)
+        label.Font = Enum.Font.Gotham
+        label.Text = "Loading..."
+        label.TextColor3 = Color3.fromRGB(220, 220, 220)
+        label.TextSize = 14
+        label.TextWrapped = true
+        label.TextXAlignment = Enum.TextXAlignment.Left
+        label.TextYAlignment = Enum.TextYAlignment.Top
+        label.Parent = frame
+
+        BootstrapGui = gui
+        BootstrapLabel = label
+    end)
+
+    if not ok then
+        return false, tostring(result)
+    end
+
+    return true
+end
+
+local function bootstrapStatus(text)
+    if BootstrapAlive and BootstrapLabel then
+        pcall(function()
+            BootstrapLabel.Text = tostring(text)
+        end)
+    end
+end
+
+local function bootstrapError(stage, err)
+    bootstrapStatus(
+        "ERROR\n\nStage: " .. tostring(stage) ..
+        "\n" .. tostring(err) ..
+        "\n\nCheck executor console for the full traceback."
+    )
+end
+
+local function destroyBootstrap()
+    BootstrapAlive = false
+
+    if BootstrapGui then
+        pcall(function()
+            BootstrapGui:Destroy()
+        end)
+    end
+
+    BootstrapGui = nil
+    BootstrapLabel = nil
+end
+
+local bootstrapOk, bootstrapErr = createBootstrap()
+if not bootstrapOk then
+    error("Bootstrap UI gagal dibuat: " .. tostring(bootstrapErr))
+end
+
+bootstrapStatus("Stage 1/3\nLoading Obsidian Library...")
 
 local ENV = (getgenv and getgenv()) or _G
 if ENV.__REEFHUB_REEFHUB_CLEANUP then
@@ -52,13 +178,38 @@ local function loadRemote(path)
     return result
 end
 
-local Library = loadRemote("Library.lua")
-if type(Library) ~= "table" then
-    error("Obsidian Library tidak mengembalikan table")
+local okLibrary, LibraryOrError = xpcall(function()
+    return loadRemote("Library.lua")
+end, debug.traceback)
+
+if not okLibrary then
+    bootstrapError("Obsidian Library", LibraryOrError)
+    error(LibraryOrError)
 end
 
-local SaveManager = loadRemote("addons/SaveManager.lua")
-local ThemeManager = loadRemote("addons/ThemeManager.lua")
+local Library = LibraryOrError
+if type(Library) ~= "table" then
+    local err = "Obsidian Library tidak mengembalikan table. Type: " .. type(Library)
+    bootstrapError("Obsidian Library", err)
+    error(err)
+end
+
+bootstrapStatus("Stage 2/3\nLoading Obsidian addons...")
+
+local okAddons, addonsOrError = xpcall(function()
+    return {
+        SaveManager = loadRemote("addons/SaveManager.lua"),
+        ThemeManager = loadRemote("addons/ThemeManager.lua"),
+    }
+end, debug.traceback)
+
+if not okAddons then
+    bootstrapError("Obsidian Addons", addonsOrError)
+    error(addonsOrError)
+end
+
+local SaveManager = addonsOrError.SaveManager
+local ThemeManager = addonsOrError.ThemeManager
 
 Library.ForceCheckbox = false
 Library.ShowToggleFrameInKeybinds = true
@@ -8019,6 +8170,8 @@ end
 -- OBSIDIAN UI
 -- ============================================================================
 
+bootstrapStatus("Stage 3/3\nCreating Obsidian window...")
+
 local okWindow, Window = xpcall(function()
     return Library:CreateWindow({
     Title = "Kick a Lucky Block",
@@ -8034,8 +8187,12 @@ local okWindow, Window = xpcall(function()
 end, debug.traceback)
 
 if not okWindow or not Window then
-    error("Obsidian CreateWindow gagal:\n" .. tostring(Window))
+    local err = "Obsidian CreateWindow gagal:\n" .. tostring(Window)
+    bootstrapError("CreateWindow", err)
+    error(err)
 end
+
+destroyBootstrap()
 
 local Tabs = {
     farming = Window:AddTab("Autofarm", "zap"),

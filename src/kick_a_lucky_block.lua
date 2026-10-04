@@ -30,9 +30,35 @@ if ENV.__REEFHUB_REEFHUB_CLEANUP then
 end
 
 local repo = "https://raw.githubusercontent.com/deividcomsono/Obsidian/main/"
-local Library = loadstring(game:HttpGet(repo .. "Library.lua"))()
-local SaveManager = loadstring(game:HttpGet(repo .. "addons/SaveManager.lua"))()
-local ThemeManager = loadstring(game:HttpGet(repo .. "addons/ThemeManager.lua"))()
+
+local function loadRemote(path)
+    local okHttp, src = pcall(function()
+        return game:HttpGet(repo .. path)
+    end)
+    if not okHttp or type(src) ~= "string" or src == "" then
+        error("Obsidian HTTP gagal: " .. path .. " | " .. tostring(src))
+    end
+
+    local fn, compileErr = loadstring(src)
+    if not fn then
+        error("Obsidian compile gagal: " .. path .. " | " .. tostring(compileErr))
+    end
+
+    local okRun, result = pcall(fn)
+    if not okRun then
+        error("Obsidian runtime gagal: " .. path .. " | " .. tostring(result))
+    end
+
+    return result
+end
+
+local Library = loadRemote("Library.lua")
+if type(Library) ~= "table" then
+    error("Obsidian Library tidak mengembalikan table")
+end
+
+local SaveManager = loadRemote("addons/SaveManager.lua")
+local ThemeManager = loadRemote("addons/ThemeManager.lua")
 
 Library.ForceCheckbox = false
 Library.ShowToggleFrameInKeybinds = true
@@ -7993,7 +8019,8 @@ end
 -- OBSIDIAN UI
 -- ============================================================================
 
-local Window = Library:CreateWindow({
+local okWindow, Window = xpcall(function()
+    return Library:CreateWindow({
     Title = "Kick a Lucky Block",
     Footer = "Kick a Lucky Block | By PanjeGogo",
     Center = true,
@@ -8003,7 +8030,12 @@ local Window = Library:CreateWindow({
     ToggleKeybind = Enum.KeyCode.RightControl,
     NotifySide = "Right",
     ShowCustomCursor = false,
-})
+    })
+end, debug.traceback)
+
+if not okWindow or not Window then
+    error("Obsidian CreateWindow gagal:\n" .. tostring(Window))
+end
 
 local Tabs = {
     farming = Window:AddTab("Autofarm", "zap"),

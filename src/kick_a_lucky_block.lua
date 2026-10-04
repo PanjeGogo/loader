@@ -3353,7 +3353,15 @@ local function performKick()
         return false
     end
 
+    -- Claim the automation lock BEFORE moving toward KickReady. The progression
+    -- background worker also performs movement (plot/seller/training). Previously
+    -- it could start a second movement task while AutoKick was walking into
+    -- KickReady, producing competing Humanoid movement controllers exactly at
+    -- the game's KickReady transition.
+    Runtime.Busy = true
+
     if not ensureKickZone() then
+        Runtime.Busy = false
         setState("Waiting for KickReady")
         return false
     end
@@ -3385,7 +3393,6 @@ local function performKick()
         return false
     end
 
-    Runtime.Busy = true
     Runtime.SawKickPhase2 = false
     Runtime.LastKickAttemptAt = now
     Runtime.CycleStartedAt = now

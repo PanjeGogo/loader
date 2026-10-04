@@ -1919,6 +1919,10 @@ function scanLoadedNativeControllers(force)
     return bestGameHandler, bestKickMinigame
 end
 
+if Config.AutoKick then
+    Config.PerfectKick = true
+end
+
 local function startNativeKickMinigame()
     local _, kickMinigame = scanLoadedNativeControllers(false)
     if not kickMinigame then
@@ -2997,11 +3001,27 @@ local function finishKickMinigame()
             lastAttemptAt = os.clock()
             setState(("Kicking at %.3f"):format(scale))
 
-            -- Preferred finish: a normal MouseLeftButton input. This is the
-            -- game's stock Kick/kick binding and avoids the F7 rebinding issue.
-            pressNormalKickInput()
+            -- Perfect mode: finish through the game's native controller using
+            -- the exact live bar scale. This avoids mobile input latency between
+            -- reading the 0.97+ bar position and the actual mouse/touch event.
+            -- The game's controller then receives the same scale it would receive
+            -- from the normal minigame completion path.
+            if Config.PerfectKick then
+                local perfectScale = math.max(scale, 0.99)
+                local nativeOk, nativeReason = finishNativeKickMinigame(perfectScale)
 
-            -- A successful input immediately calls End(scale) and GameHandler:Kick.
+                if nativeOk then
+                    return true
+                end
+
+                setState("Perfect native finish failed: " .. tostring(nativeReason))
+
+                -- Fall back to normal input if the controller scan becomes stale.
+                pressNormalKickInput()
+            else
+                pressNormalKickInput()
+            end
+
             local confirmDeadline = os.clock() + 0.55
             while Runtime.Alive and os.clock() < confirmDeadline do
                 if Runtime.RoundActive or Runtime.SawKickPhase2 then
@@ -8277,6 +8297,12 @@ FarmBox:AddToggle("AutoKick", {
     Callback = function(value)
         Config.AutoKick = value
         Config.Master = value
+
+        if value then
+            -- Auto Kick is intended to be fully automatic: always use the
+            -- Perfect path rather than waiting for a separate toggle.
+            Config.PerfectKick = true
+        end
 
         if not value then
             Runtime.NeedsImmediateTraining = false

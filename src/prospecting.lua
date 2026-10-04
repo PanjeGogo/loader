@@ -8157,9 +8157,14 @@ do
             end
         end
 
-        local function isInValidRegion(forWhat)
-            return Character and Character:FindFirstChild("HumanoidRootPart") and
-                       PanModule.getRegion(Character.HumanoidRootPart) == forWhat
+        local function isAtSavedLocation(locationCFrame, maxDistance)
+            local root = Character and Character:FindFirstChild("HumanoidRootPart")
+            if not root or not locationCFrame then
+                return false
+            end
+
+            maxDistance = maxDistance or 18
+            return (root.Position - locationCFrame.Position).Magnitude <= maxDistance
         end
 
         local function shakeUntilNotPanning(shakeScript, killSwitch)
@@ -8195,13 +8200,18 @@ do
                     break
                 end
 
-                if not isInValidRegion("Deposit") then
+                if State.AutoFarm.sandCFrame and not isAtSavedLocation(State.AutoFarm.sandCFrame, 25) then
                     break
                 end
 
-                pcall(function()
+                local invokeOk, invokeErr = pcall(function()
                     collectScript:InvokeServer(1, true)
                 end)
+
+                if not invokeOk then
+                    warn("[AutoFarm] Dig Collect failed: " .. tostring(invokeErr))
+                    task.wait(0.1)
+                end
             end
 
             return (not killSwitch or killSwitch()) and "SUCCESS" or "KILLED"
@@ -8211,9 +8221,13 @@ do
             if killSwitch and not killSwitch() then
                 return "KILLED"
             end
-            pcall(function()
+            local ok, err = pcall(function()
                 collectScript:InvokeServer(1, true)
             end)
+            if not ok then
+                warn("[AutoFarm] Dig Collect failed: " .. tostring(err))
+                return "FAIL"
+            end
             return "SUCCESS"
         end
 
@@ -8300,9 +8314,14 @@ do
                     return "SUCCESS"
                 end
 
-                pcall(function()
+                local panOk, panErr = pcall(function()
                     panScript:InvokeServer()
                 end)
+
+                if not panOk then
+                    warn("[AutoFarm] Pan/Wash failed: " .. tostring(panErr))
+                    return "FAIL"
+                end
 
                 return emptyToCompletion(shakeScript)
             end
@@ -11150,7 +11169,11 @@ do
                 return false
             end
 
-            if PanModule.getRegion(HumanoidRootPart) ~= expectedRegion then
+            if expectedRegion == "Deposit" and State.AutoFarm.sandCFrame
+                and not isAtSavedLocation(State.AutoFarm.sandCFrame, 25) then
+                return false
+            elseif expectedRegion == "Water" and State.AutoFarm.waterCFrame
+                and not isAtSavedLocation(State.AutoFarm.waterCFrame, 25) then
                 return false
             end
 

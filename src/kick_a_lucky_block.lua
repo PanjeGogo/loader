@@ -4681,7 +4681,7 @@ local function autoSellLeftoverBrainrots()
         return false
     end
 
-    Runtime.SellCancel = false
+    if Runtime.SellCancel
         or roundActive()
         or Runtime.Busy
         or Runtime.PendingRewardPlacement
@@ -4689,6 +4689,8 @@ local function autoSellLeftoverBrainrots()
     then
         return false
     end
+
+    Runtime.SellCancel = false
 
     if os.clock() - (Runtime.LastSellAt or 0) < 1.5 then
         return false

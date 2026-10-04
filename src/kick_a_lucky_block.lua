@@ -8552,6 +8552,27 @@ TutorialBox:AddToggle("TutorialEnabled", {
 local SettingsBox = SettingsTab:AddLeftGroupbox("Script", "settings")
 SettingsBox:AddLabel("Obsidian UI • no key system", true)
 SettingsBox:AddButton({
+    Text = "Unload Script",
+    Func = function()
+        Library:Notify({
+            Title = "Unloading",
+            Description = "Stopping Kick a Lucky Block script...",
+            Time = 2,
+        })
+
+        task.defer(function()
+            pcall(function()
+                Runtime.Cleanup()
+            end)
+
+            pcall(function()
+                Library:Unload()
+            end)
+        end)
+    end,
+})
+
+SettingsBox:AddButton({
     Text = "Stop All Automation",
     Func = function()
         Config.Master = false

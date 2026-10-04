@@ -8072,7 +8072,15 @@ do
         local pan = findPan(Character) or findPan(Player.Backpack) or findPan(BackpackTwo)
         if pan then
             ReplicatedStorage.Remotes.CustomBackpack.EquipRemote:FireServer(pan)
-            return pan
+
+            -- EquipRemote is asynchronous. Give the game a moment to move
+            -- the pan into the active character before reading its Scripts.
+            if not Character:FindFirstChild(pan.Name) then
+                task.wait(0.15)
+            end
+
+            local equipped = findPan(Character)
+            return equipped or pan
         end
         return nil
     end
@@ -8208,7 +8216,7 @@ do
                 end
 
                 local invokeOk, invokeErr = pcall(function()
-                    collectScript:InvokeServer(1, true)
+                    collectScript:InvokeServer(99)
                 end)
 
                 if not invokeOk then
@@ -8225,7 +8233,7 @@ do
                 return "KILLED"
             end
             local ok, err = pcall(function()
-                collectScript:InvokeServer(1, true)
+                collectScript:InvokeServer(99)
             end)
             if not ok then
                 warn("[AutoFarm] Dig Collect failed: " .. tostring(err))
@@ -8234,14 +8242,13 @@ do
             return "SUCCESS"
         end
 
-        local function emptyToCompletion(shakeScript)
-            while task.wait() do
-                if killSwitch and not killSwitch() then
-                    WashAnimation:Stop()
-                    return "KILLED"
-                end
+        local function emptyToCompletion(panScript, shakeScript)
+            -- The game's working pan loop requires Pan + Shake repeatedly.
+            -- Pan() is not a one-time initialization call.
+            task.wait(0.5)
 
-                if not shakeUntilNotPanning(shakeScript, killSwitch) then
+            while task.wait(0.05) do
+                if killSwitch and not killSwitch() then
                     WashAnimation:Stop()
                     return "KILLED"
                 end
@@ -8249,6 +8256,19 @@ do
                 local status = PanModule.getStatus()
                 if not status or status.isEmpty then
                     break
+                end
+
+                local panOk = pcall(function()
+                    panScript:InvokeServer()
+                end)
+
+                if not panOk then
+                    task.wait(0.1)
+                end
+
+                if killSwitch and not killSwitch() then
+                    WashAnimation:Stop()
+                    return "KILLED"
                 end
 
                 pcall(function()
@@ -8326,7 +8346,7 @@ do
                     return "FAIL"
                 end
 
-                return emptyToCompletion(shakeScript)
+                return emptyToCompletion(panScript, shakeScript)
             end
         }
 

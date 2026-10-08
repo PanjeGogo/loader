@@ -7964,10 +7964,56 @@ end
 -- UI
 -- ============================================================================
 
+-- HARD STARTUP SAFE MODE:
+-- Never inherit previously saved automation toggles. The user must enable
+-- Smart Autofarm / individual automation features manually after startup.
+local function forceAutomationOff()
+    Config.Master = false
+    Config.AutoTutorial = false
+    Config.AutoKick = false
+    Config.PerfectKick = false
+    Config.TurboCollect = false
+    Config.AutoOpenLuckyBlocks = false
+    Config.AutoPlaceBest = false
+    Config.AutoDismissLowRewards = false
+    Config.AutoCollectCash = false
+    Config.AutoUpgradeBrainrots = false
+    Config.AutoSellLeftovers = false
+    Config.SellUseNativeSellerTeleport = false
+    Config.AutoBuyWeights = false
+    Config.AutoTrain = false
+    Config.AdaptiveTraining = false
+    Config.SmartTrainingCadence = false
+    Config.AutoBuySpeed = false
+    Config.AutoRebirth = false
+    Config.AutoClaimFreeItem = false
+    Config.AutoClaimOffline = false
+    Config.AutoWheelSpins = false
+    Config.AutoKickBonuses = false
+    Config.AutoKickStyles = false
+    Config.AutoBaseSlots = false
+    Config.AutoBattlePassClaims = false
+    Config.AutoMailboxRewards = false
+    Config.AutoGroupGift = false
+    Config.AutoGymTime = false
+    Config.AutoSchoolCraft = false
+    Config.AutoSchoolMath = false
+    Config.AutoMightyChest = false
+    Config.ReplaceWeak = false
+end
+
+forceAutomationOff()
+
+forceAutomationOff()
+
 local Window = ReefHubUI:CreateWindow({
     Name = "ReefHub · Kick a Lucky Block",
     GuiName = "ReefHub_KickALuckyBlock",
-    ConfigId = "KickALuckyBlock",
+    ConfigId = "KickALuckyBlock_ManualStart",
+    Configs = {
+        AutoLoad = false,
+        AutoSave = false,
+    },
     Width = 500,
     Height = 560,
 })
@@ -8303,46 +8349,6 @@ SettingsTab:CreateButton({
     end,
 })
 
-
--- HARD STARTUP SAFE MODE:
--- Never inherit previously saved automation toggles. The user must enable
--- Smart Autofarm / individual automation features manually after startup.
-local function forceAutomationOff()
-    Config.Master = false
-    Config.AutoTutorial = false
-    Config.AutoKick = false
-    Config.PerfectKick = false
-    Config.TurboCollect = false
-    Config.AutoOpenLuckyBlocks = false
-    Config.AutoPlaceBest = false
-    Config.AutoDismissLowRewards = false
-    Config.AutoCollectCash = false
-    Config.AutoUpgradeBrainrots = false
-    Config.AutoSellLeftovers = false
-    Config.SellUseNativeSellerTeleport = false
-    Config.AutoBuyWeights = false
-    Config.AutoTrain = false
-    Config.AdaptiveTraining = false
-    Config.SmartTrainingCadence = false
-    Config.AutoBuySpeed = false
-    Config.AutoRebirth = false
-    Config.AutoClaimFreeItem = false
-    Config.AutoClaimOffline = false
-    Config.AutoWheelSpins = false
-    Config.AutoKickBonuses = false
-    Config.AutoKickStyles = false
-    Config.AutoBaseSlots = false
-    Config.AutoBattlePassClaims = false
-    Config.AutoMailboxRewards = false
-    Config.AutoGroupGift = false
-    Config.AutoGymTime = false
-    Config.AutoSchoolCraft = false
-    Config.AutoSchoolMath = false
-    Config.AutoMightyChest = false
-    Config.ReplaceWeak = false
-end
-
-forceAutomationOff()
 
 task.spawn(farmLoop)
 task.spawn(Runtime.FastProgressionBackgroundLoop)

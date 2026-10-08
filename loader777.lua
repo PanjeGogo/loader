@@ -58,11 +58,11 @@ if not okReefHub or type(ReefHubUI) ~= "table" or type(ReefHubUI.CreateWindow) ~
 end
 
 local Config = {
-    Master = true,
-    AutoTutorial = true,
-    AutoKick = true,
-    PerfectKick = true,
-    TurboCollect = true,
+    Master = false,
+    AutoTutorial = false,
+    AutoKick = false,
+    PerfectKick = false,
+    TurboCollect = false,
     TravelMode = "Walk", -- Walk / Teleport (Safe) / Manual
     KickDelay = 0.40,
 
@@ -72,34 +72,34 @@ local Config = {
     FarmKickMode = "Max Distance",
     FarmRarityBuffer = 12,
 
-    AutoOpenLuckyBlocks = true,
+    AutoOpenLuckyBlocks = false,
     LuckyBlockEveryKicks = 3,
 
-    AutoPlaceBest = true,
+    AutoPlaceBest = false,
     AutoDismissLowRewards = false, -- legacy route disabled; collect then Auto Sell
     ReplaceWeak = true,
     ReplaceThreshold = 1.0, -- replace on any genuine improvement
-    AutoCollectCash = true,
+    AutoCollectCash = false,
     CashCollectInterval = 3.0,
 
-    AutoUpgradeBrainrots = true,
+    AutoUpgradeBrainrots = false,
     BrainrotUpgradeSpendFraction = 0.85,
     BrainrotUpgradeMaxPerPass = 18,
     BrainrotUpgradeKeepFraction = 1.00, -- every placed CPS brainrot eligible; lowest levels first
 
-    AutoSellLeftovers = true,
+    AutoSellLeftovers = false,
     SellMode = "Sell All UI",
-    SellUseNativeSellerTeleport = true,
+    SellUseNativeSellerTeleport = false,
     SellMaxPerVisit = 20, -- fallback individual mode only
     SellAllButtonTimeout = 1.75,
     SellAllConfirmTimeout = 1.75,
 
-    AutoBuyWeights = true,
-    AutoTrain = true,
+    AutoBuyWeights = false,
+    AutoTrain = false,
 
-    AdaptiveTraining = true,
+    AdaptiveTraining = false,
 
-    SmartTrainingCadence = true,
+    SmartTrainingCadence = false,
     TrainingBurstEveryKicks = 2,
     TrainingBurstSeconds = 2.5,
     NextRaritySprintMaxSeconds = 7.0,
@@ -112,24 +112,24 @@ local Config = {
     -- Fixed fallback only when Adaptive Distance Training is disabled.
     TrainBetweenKicks = 4.0,
 
-    AutoBuySpeed = true,
+    AutoBuySpeed = false,
     SpeedSpendFraction = 0.40,
-    AutoRebirth = true,
+    AutoRebirth = false,
 
     -- Automatic rewards / progression
-    AutoClaimFreeItem = true,
-    AutoClaimOffline = true,
-    AutoWheelSpins = true,
-    AutoKickBonuses = true,
-    AutoKickStyles = true,
+    AutoClaimFreeItem = false,
+    AutoClaimOffline = false,
+    AutoWheelSpins = false,
+    AutoKickBonuses = false,
+    AutoKickStyles = false,
     KickStyleMode = "Throughput",
-    AutoBaseSlots = true,
-    AutoBattlePassClaims = true,
-    AutoMailboxRewards = true,
+    AutoBaseSlots = false,
+    AutoBattlePassClaims = false,
+    AutoMailboxRewards = false,
     AutoGroupGift = false,
 
     -- Event systems
-    AutoGymTime = true,
+    AutoGymTime = false,
     GymTimeStayUntilEnd = true,
     GymEventTravelMode = "Teleport (Safe)",
     GymEventMissingGrace = 1.50,
@@ -7248,7 +7248,7 @@ local function handleTutorial()
     elseif step == 3 then
         setState("Tutorial: start kick")
         local old = Config.AutoKick
-        Config.AutoKick = true
+        Config.AutoKick = false
         performKick()
         Config.AutoKick = old
         return true
@@ -7258,7 +7258,7 @@ local function handleTutorial()
             finishKickMinigame()
         else
             local old = Config.AutoKick
-            Config.AutoKick = true
+            Config.AutoKick = false
             performKick()
             Config.AutoKick = old
         end
@@ -7318,7 +7318,7 @@ local function handleTutorial()
     elseif step == 12 then
         setState("Tutorial: buy wooden stick")
         local old = Config.AutoBuyWeights
-        Config.AutoBuyWeights = true
+        Config.AutoBuyWeights = false
         Runtime.LastWeightAction = 0
         buyOrEquipBestWeight(true)
         Config.AutoBuyWeights = old
@@ -7331,7 +7331,7 @@ local function handleTutorial()
             equipTool(tool)
         else
             local old = Config.AutoBuyWeights
-            Config.AutoBuyWeights = true
+            Config.AutoBuyWeights = false
             Runtime.LastWeightAction = 0
             buyOrEquipBestWeight(true)
             Config.AutoBuyWeights = old
@@ -7343,8 +7343,8 @@ local function handleTutorial()
         if currentKickPower() < 100 then
             local oldTrain = Config.AutoTrain
             local oldBuy = Config.AutoBuyWeights
-            Config.AutoTrain = true
-            Config.AutoBuyWeights = true
+            Config.AutoTrain = false
+            Config.AutoBuyWeights = false
             trainFor(0.8, 100)
             Config.AutoTrain = oldTrain
             Config.AutoBuyWeights = oldBuy
@@ -7366,7 +7366,7 @@ local function handleTutorial()
         setState("Tutorial: buy 5 speed upgrades")
         if currentSpeedLevel() < 5 then
             local old = Config.AutoBuySpeed
-            Config.AutoBuySpeed = true
+            Config.AutoBuySpeed = false
             Runtime.LastSpeedAction = 0
             buySpeedOnce(5)
             Config.AutoBuySpeed = old

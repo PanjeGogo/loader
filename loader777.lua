@@ -3138,6 +3138,77 @@ end
 
 local captureActualKickDistance
 
+local function kickNetworkRemote(name)
+    local shared = ReplicatedStorage:FindFirstChild("Shared")
+    local packages = shared and shared:FindFirstChild("Packages")
+    local network = packages and packages:FindFirstChild("Network")
+    local remote = network and network:FindFirstChild(name)
+
+    if remote and remote:IsA("RemoteFunction") then
+        return remote
+    end
+
+    return nil
+end
+
+local function enableServerAutoKick()
+    local remote = kickNetworkRemote("ref_AutoRequest")
+    if not remote then
+        return false, "ref_AutoRequest not found"
+    end
+
+    local ok, result = pcall(function()
+        return remote:InvokeServer(true)
+    end)
+
+    if not ok then
+        return false, tostring(result)
+    end
+
+    return true, result
+end
+
+local function serverKickRequest()
+    local remote = kickNetworkRemote("ref_KickEvent")
+    if not remote then
+        return false, "ref_KickEvent not found"
+    end
+
+    -- Treat the first argument as the player's current position.
+    -- This keeps the request dynamic instead of sending a fixed coordinate.
+    local position
+    pcall(function()
+        local root = rootPart()
+        if root then
+            position = root.Position
+        end
+    end)
+
+    if typeof(position) ~= "Vector3" then
+        return false, "HumanoidRootPart position unavailable"
+    end
+
+    -- Prefer Roblox's synchronized server clock when available.
+    local timestamp
+    pcall(function()
+        timestamp = workspace:GetServerTimeNow()
+    end)
+
+    if type(timestamp) ~= "number" then
+        timestamp = os.time()
+    end
+
+    local ok, result = pcall(function()
+        return remote:InvokeServer(position, 1, timestamp)
+    end)
+
+    if not ok then
+        return false, tostring(result)
+    end
+
+    return true, result
+end
+
 local function performKick()
     if not Config.AutoKick or Runtime.Busy or not Runtime.Alive then
         return false
@@ -3148,42 +3219,22 @@ local function performKick()
         return false
     end
 
-    if not ensureKickZone() then
-        setState("Waiting for KickReady")
-        return false
-    end
-
-    local hud = findHUD()
-    local button = hud and hud:FindFirstChild("KickButton")
-    if not button or not button:IsA("GuiButton") then
-        setState("Waiting for KICK button")
-        return false
-    end
-
-    if not button.Visible then
-        setState("Waiting for KICK button reset")
-        return false
-    end
-
-    if not Runtime.KickServerReady(button) then
-        if Runtime.KickErrorVisible() then
-            Runtime.LastKickAttemptAt = os.clock()
-        end
-        return false
-    end
-
-    -- Prevent duplicate presses if the UI/state takes time to react.
-    local now = os.clock()
-    local minAttemptGap = math.max(0.20, math.min(1.5, tonumber(Config.KickDelay) or 0.50))
-    if now - Runtime.LastKickAttemptAt < minAttemptGap then
-        setState("Waiting before next KICK press")
-        return false
-    end
-
+    -- Direct server path discovered from the live game's network calls.
+    -- Do not enter KickReady and do not open/play the client minigame.
     Runtime.Busy = true
+    setState("Enabling server Auto Kick")
+
+    local autoOk, autoReason = enableServerAutoKick()
+    if not autoOk then
+        Runtime.Busy = false
+        setState("AutoRequest failed: " .. tostring(autoReason))
+        return false
+    end
+
     Runtime.SawKickPhase2 = false
-    Runtime.LastKickAttemptAt = now
-    Runtime.CycleStartedAt = now
+    Runtime.LastKickAttemptAt = os.clock()
+    local kickStartedAt = Runtime.LastKickAttemptAt
+    Runtime.CycleStartedAt = Runtime.LastKickAttemptAt
     Runtime.KickToolSnapshot = snapshotEntityToolInstances()
     Runtime.LastCollectedPayload = nil
     Runtime.LastCollectedAt = 0
@@ -3191,81 +3242,26 @@ local function performKick()
     Runtime.PostKickPhase = "StartingKick"
     Runtime.DistanceCapturedThisKick = false
     Runtime.LastKickPowerAtLaunch = currentKickPower()
-    local kickStartedAt = now
 
-    -- Record the EXACT point this kick starts from. After the lucky block lands,
-    -- the game transforms/replaces our character, so only keep plain world data.
     local kickRoot = rootPart()
     if kickRoot then
         Runtime.KickOriginPosition = kickRoot.Position
         Runtime.KickOriginCFrame = kickRoot.CFrame
-        Runtime.KickOriginCapturedAt = now
+        Runtime.KickOriginCapturedAt = Runtime.LastKickAttemptAt
     end
 
-    -- Apply the selected distance using the game's normal SetKickPower state.
-    -- Max Distance writes the full current Kick Power every single kick.
-    setFastFarmKickPower()
+    setState("Sending server KickEvent")
 
-    if tostring(Config.FarmKickMode or "Max Distance") == "Max Distance" then
-        Runtime.TargetKickPercent = 1
-        Runtime.ExtraState = "Kick target • MAX DISTANCE • 100% power"
-    end
-
-    -- Deterministic v2.0 path: trigger the game's own
-    -- canKick/startKicking InputAction. Its Pressed signal is connected to the
-    -- SAME PressedStart() callback as the visible KICK button.
-    if not minigameActive() then
-        setState("Triggering game startKicking action")
-
-        local started, startReason = startKickThroughInputAction()
-        if not started then
-            Runtime.Busy = false
-            setState("Start action failed: " .. tostring(startReason))
-            return false
-        end
-
-        local startDeadline = os.clock() + 2.5
-
-        while Runtime.Alive and os.clock() < startDeadline do
-            if minigameActive() or Runtime.KickErrorVisible() then
-                break
-            end
-            task.wait(0.04)
-        end
-    end
-
-    if not minigameActive() then
+    local kickOk, kickReason = serverKickRequest()
+    if not kickOk then
         Runtime.Busy = false
-
-        if Runtime.KickErrorVisible() then
-            Runtime.LastKickSucceeded = false
-            Runtime.RoundActive = false
-            Runtime.SawKickPhase2 = false
-            Runtime.LastKickAttemptAt = os.clock()
-            task.wait(0.85)
-        end
-
+        Runtime.LastKickSucceeded = false
+        setState("KickEvent failed: " .. tostring(kickReason))
         return false
     end
 
-    local finished, finishReason = finishKickMinigame()
-
-    if not finished then
-        Runtime.Busy = false
-
-        if Runtime.KickErrorVisible()
-            or tostring(finishReason):lower():find("rejected", 1, true)
-        then
-            Runtime.LastKickSucceeded = false
-            Runtime.RoundActive = false
-            Runtime.SawKickPhase2 = false
-            Runtime.LastKickAttemptAt = os.clock()
-            task.wait(0.85)
-        end
-
-        return false
-    end
-
+    Runtime.Busy = false
+    Runtime.PostKickPhase = "BlockFlying"
     -- GameHandler now enters the long kick/result lifecycle. The lucky block can
     -- fly for a while, then kickPhase2 provides the rolled reward(s), then the
     -- client transforms us into those brainrot(s), reveals them, raises the wave,
@@ -3278,7 +3274,7 @@ local function performKick()
     local sawRun = false
 
     while Runtime.Alive and Config.Master and os.clock() < lifecycleDeadline do
-        if Runtime.LastKickEndedAt > kickStartedAt then
+        if (tonumber(Runtime.LastKickEndedAt) or 0) > kickStartedAt then
             break
         end
 

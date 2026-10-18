@@ -1,6 +1,3 @@
--- KALB Auto Farm + Obsidian UI
--- UI-inspired by the user's MaM.txt example.
--- Uses the same Obsidian Library / SaveManager / ThemeManager loading pattern as MaM.txt.
 local SOURCE_URL = "https://raw.githubusercontent.com/xyaxzj/sigmamaboi.lua/4d8ae0a5ad4a93d261cc3da5fc302ee04a03b220/auto%20farm%20kalb.lua"
 local repo = "https://raw.githubusercontent.com/deividcomsono/Obsidian/main/"
 
@@ -8,43 +5,14 @@ if not game:IsLoaded() then
     game.Loaded:Wait()
 end
 
-local sourceOk, source = pcall(function()
-    return game:HttpGet(SOURCE_URL)
-end)
-
-if not sourceOk or type(source) ~= "string" or #source < 1000 then
-    warn("[KALB UI] Gagal mengambil source KALB.")
-    return
-end
-
--- 
-local forceOff = {
-    "autoFarm", "enableCandyEvent", "candyWaypointNav", "candyAntiOvershoot",
-    "verifyDebrisPickup", "useBrainrotWhitelist", "autoSellAll", "autoRemovePlayer",
-    "antiLag", "muteAudio",
-}
-for _, name in ipairs(forceOff) do
-    local pattern = "(_G%." .. name .. "%s*=%s*)true"
-    source = source:gsub(pattern, "%1false", 1)
-end
-local forceOffAlso = {
-    "onlyCandyEvent", "expandCandyHitbox", "enableFireTouch",
-    "autoWorldTeleport", "debugConsoleLog", "disable3dRender",
-}
-for _, name in ipairs(forceOffAlso) do
-    local pattern = "(_G%." .. name .. "%s*=%s*)true"
-    source = source:gsub(pattern, "%1false", 1)
-end
-
-local compiled, compileErr = loadstring(source)
-if not compiled then
-    warn("[KALB UI] Embedded KALB source gagal dikompilasi: " .. tostring(compileErr))
-    return
-end
-local runOk, runErr = pcall(compiled)
-if not runOk then
-    warn("[KALB UI] Embedded KALB source berhenti dengan error: " .. tostring(runErr))
-    return
+-- Safe initial defaults so UI can still open even if the remote payload fails.
+for _, name in ipairs({
+    "autoFarm", "onlyCandyEvent", "enableCandyEvent", "expandCandyHitbox",
+    "candyWaypointNav", "candyAntiOvershoot", "verifyDebrisPickup", "enableFireTouch",
+    "autoSellAll", "autoWorldTeleport", "useBrainrotWhitelist", "autoRemovePlayer",
+    "antiLag", "muteAudio", "disable3dRender", "debugConsoleLog"
+}) do
+    _G[name] = false
 end
 
 local uiOk, uiErr = pcall(function()
@@ -319,3 +287,46 @@ end)
 if not uiOk then
     warn("[KALB UI] UI Obsidian gagal dibuat: " .. tostring(uiErr))
 end
+
+
+-- Load/run the farm payload only AFTER the UI has been created.
+-- Payload errors must not prevent the UI from appearing.
+local sourceOk, source = pcall(function()
+    return game:HttpGet(SOURCE_URL)
+end)
+
+if not sourceOk or type(source) ~= "string" or #source < 1000 then
+    warn("[KALB UI] Gagal mengambil source KALB.")
+    return
+end
+
+-- 
+local forceOff = {
+    "autoFarm", "enableCandyEvent", "candyWaypointNav", "candyAntiOvershoot",
+    "verifyDebrisPickup", "useBrainrotWhitelist", "autoSellAll", "autoRemovePlayer",
+    "antiLag", "muteAudio",
+}
+for _, name in ipairs(forceOff) do
+    local pattern = "(_G%." .. name .. "%s*=%s*)true"
+    source = source:gsub(pattern, "%1false", 1)
+end
+local forceOffAlso = {
+    "onlyCandyEvent", "expandCandyHitbox", "enableFireTouch",
+    "autoWorldTeleport", "debugConsoleLog", "disable3dRender",
+}
+for _, name in ipairs(forceOffAlso) do
+    local pattern = "(_G%." .. name .. "%s*=%s*)true"
+    source = source:gsub(pattern, "%1false", 1)
+end
+
+local compiled, compileErr = loadstring(source)
+if not compiled then
+    warn("[KALB UI] Embedded KALB source gagal dikompilasi: " .. tostring(compileErr))
+    return
+end
+local runOk, runErr = pcall(compiled)
+if not runOk then
+    warn("[KALB UI] Embedded KALB source berhenti dengan error: " .. tostring(runErr))
+    return
+end
+

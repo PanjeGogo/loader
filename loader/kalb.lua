@@ -4,7 +4,7 @@
 
 local OBSIDIAN_REPO = "https://raw.githubusercontent.com/deividcomsono/Obsidian/main/"
 
--- KALB Auto Farm V5.1 embedded source (standalone; no external SOURCE_URL)
+-- KALB Auto Farm V5.1 embedded source (embedded standalone source)
 local source = [[
 -- ==============================================================================
 -- 🥔 KALB ULTRA LIGHTWEIGHT AUTO FARM V5.1 (SMOOTH SPRINT CANDY EDITION)

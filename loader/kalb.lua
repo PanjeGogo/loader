@@ -3,6 +3,7 @@
 -- All feature toggles are forced OFF before the original script is executed.
 
 -- Obsidian UI, SaveManager, and ThemeManager are loaded from the official Obsidian repository.
+local repo = "https://raw.githubusercontent.com/deividcomsono/Obsidian/main/"
 
 -- KALB Auto Farm V5.1 embedded source (embedded standalone source)
 local source = [[

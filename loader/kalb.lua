@@ -2099,6 +2099,34 @@ local uiOk, uiErr = pcall(function()
         end,
     })
 
+    SettingsBox:AddButton("Unload Script", {
+        Text = "Unload Script",
+        Func = function()
+            -- Matikan fitur yang dikendalikan melalui toggle sebelum menutup UI.
+            _G.autoFarm = false
+            _G.onlyCandyEvent = false
+            _G.enableCandyEvent = false
+            _G.expandCandyHitbox = false
+            _G.candyWaypointNav = false
+            _G.candyAntiOvershoot = false
+            _G.verifyDebrisPickup = false
+            _G.enableFireTouch = false
+            _G.autoSellAll = false
+            _G.autoWorldTeleport = false
+            _G.autoRemovePlayer = false
+            _G.antiLag = false
+            _G.muteAudio = false
+            _G.disable3dRender = false
+            _G.debugConsoleLog = false
+
+            pcall(function()
+                game:GetService("RunService"):Set3dRenderingEnabled(true)
+            end)
+            Library:Unload()
+        end,
+        Tooltip = "Matikan toggle fitur dan tutup UI Obsidian."
+    })
+
     local InfoBox = Tabs.settings:AddRightGroupbox("Info", "info")
     InfoBox:AddLabel("Build: KALB V5.1 + Obsidian UI", true)
     InfoBox:AddLabel("Toggle ON/OFF secara manual. Default semua fitur OFF.", true)

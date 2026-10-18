@@ -1,8 +1,34 @@
-local repo = "https://raw.githubusercontent.com/deividcomsono/Obsidian/main/"
+-- ==============================================================================
+-- KALB bootstrap: configuration and shared runtime state
+-- Organized to follow the setup pattern used in MaM.txt.
+-- ==============================================================================
+local Config = {
+    UiRepository = "https://raw.githubusercontent.com/deividcomsono/Obsidian/main/",
+    ConfigFolder = "KALB_Obsidian/configs",
+    ThemeFolder = "KALB_Obsidian",
+}
+
+local Services = {
+    Players = game:GetService("Players"),
+    RunService = game:GetService("RunService"),
+    ReplicatedStorage = game:GetService("ReplicatedStorage"),
+    Workspace = game:GetService("Workspace"),
+    UserInputService = game:GetService("UserInputService"),
+    TeleportService = game:GetService("TeleportService"),
+    Lighting = game:GetService("Lighting"),
+    SoundService = game:GetService("SoundService"),
+}
+
+local State = {
+    unloaded = false,
+    connections = {},
+}
 
 if not game:IsLoaded() then
     game.Loaded:Wait()
 end
+
+local repo = Config.UiRepository
 
 -- Safe initial defaults so UI can still open even if the remote payload fails.
 for _, name in ipairs({
@@ -275,8 +301,8 @@ local uiOk, uiErr = pcall(function()
     ThemeManager:SetLibrary(Library)
     SaveManager:IgnoreThemeSettings()
     SaveManager:SetIgnoreIndexes({})
-    ThemeManager:SetFolder("KALB_Obsidian")
-    SaveManager:SetFolder("KALB_Obsidian/configs")
+    ThemeManager:SetFolder(Config.ThemeFolder)
+    SaveManager:SetFolder(Config.ConfigFolder)
     ThemeManager:ApplyToTab(Tabs.settings)
     SaveManager:BuildConfigSection(Tabs.settings)
 

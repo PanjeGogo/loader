@@ -288,9 +288,8 @@ if not uiOk then
 end
 
 
--- Load/run the farm payload only AFTER the UI has been created.
--- Payload errors must not prevent the UI from appearing.
-local source = [=[
+-- KALB Auto Farm core: embedded directly in this file, following the feature UI setup.
+do
 -- ==============================================================================
 -- 🥔 KALB ULTRA LIGHTWEIGHT AUTO FARM V5.1 (SMOOTH SPRINT CANDY EDITION)
 -- ==============================================================================
@@ -316,38 +315,38 @@ if not game:IsLoaded() then game.Loaded:Wait() end
 -- ==============================================================================
 -- ⚙️ KONFIGURASI PENGGUNA (UBAH SESUAI KEBUTUHAN DI SINI)
 -- ==============================================================================
-_G.autoFarm             = true        -- true: Auto Farm Aktif, false: Nonaktif
+_G.autoFarm             = false        -- true: Auto Farm Aktif, false: Nonaktif
 _G.onlyCandyEvent       = false       -- true: HANYA Auto Kick saat Candy Event aktif, false: Auto kick nonstop
 
 -- 🍬 PENGATURAN FITUR CANDY EVENT (DAPAT DIAKTIFKAN / DINONAKTIFKAN SECARA TERPISAH)
-_G.enableCandyEvent     = true        -- [1] Master Switch: Aktifkan penanganan Candy Event (cuaca & spawn permen)
+_G.enableCandyEvent     = false        -- [1] Master Switch: Aktifkan penanganan Candy Event (cuaca & spawn permen)
 _G.expandCandyHitbox    = false        -- [2] Hitbox Switch: Memperbesar hitbox Candy/Cokelat/dll ke ukuran yang ditentukan
 _G.candyHitboxSize      = Vector3.new(100, 100, 100) -- Ukuran hitbox Candy yang dibesarkan
-_G.candyWaypointNav     = true        -- [3] Navigation Switch: Pandu rute jalan kaki melintasi waypoint permen ke Safe Zone
+_G.candyWaypointNav     = false        -- [3] Navigation Switch: Pandu rute jalan kaki melintasi waypoint permen ke Safe Zone
 _G.candyReachDist       = 1           -- Jarak dasar (studs) horizontal untuk menganggap permen sudah terlewati/terambil (Auto-scaled saat speed kencang)
-_G.candyAntiOvershoot   = true        -- [4] Anti-Overshoot & Drift: Redam momentum saat lari kencang agar tidak muter-muter / miss
-_G.verifyDebrisPickup   = true        -- [5] Debris Checker: Pastikan barang di Debris hilang saat dibawa; jika belum hilang, kembali ke waypoint
+_G.candyAntiOvershoot   = false        -- [4] Anti-Overshoot & Drift: Redam momentum saat lari kencang agar tidak muter-muter / miss
+_G.verifyDebrisPickup   = false        -- [5] Debris Checker: Pastikan barang di Debris hilang saat dibawa; jika belum hilang, kembali ke waypoint
 _G.enableFireTouch      = false       -- [6] FireTouch Switch: true: picu firetouchinterest instan, false: nonaktif (murni fisik/hitbox)
 
-_G.useBrainrotWhitelist = true        -- true: Hanya bawa brainrot di whitelist ke safe zone, false: Bawa semua
+_G.useBrainrotWhitelist = false        -- true: Hanya bawa brainrot di whitelist ke safe zone, false: Bawa semua
 _G.brainrotWhitelist    = {           -- Daftar nama brainrot yang diizinkan (Case-insensitive & Partial match)
     "Chocolate Gangster",
     "Tricerabob",
     "Teacherrina",
 }
 _G.kickDelay            = 0.5         -- Jeda waktu (detik) di Safe Zone sebelum menendang/kick (Default: 0.5 detik, jangan terlalu instant)
-_G.autoSellAll          = true       -- true: Auto Sell All setiap 5 detik via ref_B_SellAll
+_G.autoSellAll          = false       -- true: Auto Sell All setiap 5 detik via ref_B_SellAll
 _G.autoWorldTeleport    = false        -- true: Teleport otomatis 1x saat baru dieksekusi via rev_WORLD_TP, false: Nonaktif
 _G.targetWorld          = 2           -- Target ID World untuk teleportasi otomatis (Default: 2)
-_G.autoRemovePlayer     = true        -- true: Hapus player lain dari game.Players & workspace.Players (100% Bersih & No Lag), false: Biarkan
+_G.autoRemovePlayer     = false        -- true: Hapus player lain dari game.Players & workspace.Players (100% Bersih & No Lag), false: Biarkan
 _G.debugConsoleLog      = false        -- true: Cetak log status/fase/candy ke console (F9), false: Senyap
 _G.failsafeTimeout      = 25          -- Waktu maksimal (detik) sebelum auto-reset ke Safe Zone jika macet
 
 -- ⚡ ANTI-LAG & POTATO MODE
-_G.antiLag             = true        -- true: Master switch Anti-Lag (Hapus Folder/Model target, PlayerGui, Partikel, Lighting, Map Gray)
+_G.antiLag             = false        -- true: Master switch Anti-Lag (Hapus Folder/Model target, PlayerGui, Partikel, Lighting, Map Gray)
 _G.fpsCap              = 60          -- Batas target FPS (60 hemat baterai & CPU, 30 untuk multi-akun, 0 = default)
 _G.disable3dRender     = false       -- true: Layar freeze / 0% GPU saat AFK farm (Pencet F10 untuk toggle), false: Tampilan visual normal
-_G.muteAudio           = true        -- true: Mute semua audio & reverb game (0% beban CPU audio)
+_G.muteAudio           = false        -- true: Mute semua audio & reverb game (0% beban CPU audio)
 
 print("--------------------------------------------------")
 print("🚀 [INIT] Memuat KALB Auto Farm V5.1 (Smooth Sprint & Instant Pickup Edition)...")
@@ -2127,35 +2126,4 @@ print("--------------------------------------------------")
 print("🚀 [SUKSES] KALB Candy Event & Teleport Kick Auto Farm Siap Berjalan!")
 print("--------------------------------------------------")
 
-]=]
-
--- 
-local forceOff = {
-    "autoFarm", "enableCandyEvent", "candyWaypointNav", "candyAntiOvershoot",
-    "verifyDebrisPickup", "useBrainrotWhitelist", "autoSellAll", "autoRemovePlayer",
-    "antiLag", "muteAudio",
-}
-for _, name in ipairs(forceOff) do
-    local pattern = "(_G%." .. name .. "%s*=%s*)true"
-    source = source:gsub(pattern, "%1false", 1)
 end
-local forceOffAlso = {
-    "onlyCandyEvent", "expandCandyHitbox", "enableFireTouch",
-    "autoWorldTeleport", "debugConsoleLog", "disable3dRender",
-}
-for _, name in ipairs(forceOffAlso) do
-    local pattern = "(_G%." .. name .. "%s*=%s*)true"
-    source = source:gsub(pattern, "%1false", 1)
-end
-
-local compiled, compileErr = loadstring(source)
-if not compiled then
-    warn("[KALB UI] Embedded KALB source gagal dikompilasi: " .. tostring(compileErr))
-    return
-end
-local runOk, runErr = pcall(compiled)
-if not runOk then
-    warn("[KALB UI] Embedded KALB source berhenti dengan error: " .. tostring(runErr))
-    return
-end
-

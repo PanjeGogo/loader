@@ -1,11 +1,6 @@
 -- KALB Auto Farm + Obsidian UI
 -- UI-inspired by the user's MaM.txt example.
--- All feature toggles are forced OFF before the original script is executed.
-
--- Obsidian UI, SaveManager, and ThemeManager are loaded from the official Obsidian repository.
-local repo = "https://raw.githubusercontent.com/deividcomsono/Obsidian/main/"
-
--- KALB Auto Farm V5.1 embedded source (embedded standalone source)
+-- Uses the same Obsidian Library / SaveManager / ThemeManager loading pattern as MaM.txt.
 local SOURCE_URL = "https://raw.githubusercontent.com/xyaxzj/sigmamaboi.lua/4d8ae0a5ad4a93d261cc3da5fc302ee04a03b220/auto%20farm%20kalb.lua"
 local repo = "https://raw.githubusercontent.com/deividcomsono/Obsidian/main/"
 

@@ -1296,13 +1296,15 @@ local waypointStuckTimer = 0
 local emptyCandySpawnReceived = false
 local lastRewardBrainrotName = ""
 
--- Teleportasi Instan ke Safe Zone (Dipakai saat Kick / Idle / Respawn / Timeout)
+-- Gerakkan karakter menuju Safe Zone dengan berjalan, tanpa memindahkan CFrame secara instan.
 local function teleportToSafeZone(hrp)
     if not hrp then return end
     pcall(function()
-        hrp.AssemblyLinearVelocity = Vector3.zero
-        hrp.AssemblyAngularVelocity = Vector3.zero
-        hrp.CFrame = safeZoneCFrame
+        local character = hrp.Parent
+        local humanoid = character and character:FindFirstChildOfClass("Humanoid")
+        if humanoid and humanoid.Health > 0 then
+            humanoid:MoveTo(safeZone)
+        end
     end)
 end
 
@@ -1828,7 +1830,13 @@ task.spawn(function()
         -- [ FASE 1: IDLE / NENDANG DI SAFE ZONE (TELEPORTASI INSTAN JIKA JAUH) ]
         if targetAction == "Idle" then
             if distToSafeZone > 5 then
-                teleportToSafeZone(hrp)
+                targetAction = "WalkToSafeZone"
+                stateTimer = 0
+                activeCandyWaypoints = {}
+                currentWaypointTarget = nil
+                waypointStuckTimer = 0
+                teleportToSafeZone(hrp) -- sekarang hanya memerintahkan Humanoid berjalan
+                continue
             else
                 if shouldKick() then
                     local delayKick = (_G.kickDelay and _G.kickDelay > 0) and _G.kickDelay or 0.5
@@ -2116,7 +2124,13 @@ task.spawn(function()
         -- [ FASE 4: NUNGGU COLLECTED & RE-KICK INSTAN (TELEPORTASI KE SAFEZONE UNTUK KICK) ]
         elseif targetAction == "WaitingForCollected" then
             if distToSafeZone >= 5 then
-                teleportToSafeZone(hrp)
+                targetAction = "WalkToSafeZone"
+                stateTimer = 0
+                activeCandyWaypoints = {}
+                currentWaypointTarget = nil
+                waypointStuckTimer = 0
+                teleportToSafeZone(hrp) -- jalan kembali dulu; kick ditunda sampai tiba
+                continue
             end
 
             if collectedFired or kickEndedFired or stateTimer >= 2.5 then

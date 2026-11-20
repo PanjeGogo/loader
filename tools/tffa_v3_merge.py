@@ -124,6 +124,63 @@ def main():
                 added += 1
                 report.append(f"ADDED: {relative.as_posix()} [{item.get('class')}]")
 
+
+    # Rename existing biome zones to locations that appear in the Pokémon anime.
+    zone_names = {
+        "Desert": "Desert Resort",
+        "Ocean": "Seafoam Island",
+        "Mountains": "Mt. Silver",
+        "Taiga": "Viridian Forest",
+        "Winter": "Snowpoint City",
+        "DeepWaters": "Sootopolis City",
+        "MythicalParadise": "Aether Paradise",
+    }
+    workspace = find_child(datamodel, "Workspace")
+    biomes = find_child(workspace, "Biomes") if workspace is not None else None
+    if biomes is not None:
+        for old_name, new_name in zone_names.items():
+            zone = find_child(biomes, old_name)
+            if zone is not None:
+                prop_node = prop(zone, "Name")
+                if prop_node is not None:
+                    prop_node.text = new_name
+                    report.append(f"RENAMED BIOME: {old_name} -> {new_name}")
+        # Keep string-based lookups in scripts synchronized with the renamed folders.
+        for node in datamodel.iter("Item"):
+            props = node.find("Properties")
+            if props is None:
+                continue
+            for source_node in props:
+                if source_node.get("name") == "Source" and source_node.text:
+                    source = source_node.text
+                    for old_name, new_name in zone_names.items():
+                        source = source.replace(f'"{old_name}"', f'"{new_name}"')
+                        source = source.replace(f"'{old_name}'", f"'{new_name}'")
+                    source_node.text = source
+
+    # Add the runtime visual reskin as a server Script. It hides the old food
+    # meshes but preserves each model, its name, and all gameplay data/scripts.
+    visual_path = pathlib.Path("tools/PokemonVisuals.server.lua")
+    if visual_path.exists():
+        server_service = find_child(datamodel, "ServerScriptService")
+        if server_service is None:
+            raise SystemExit("ServerScriptService not found; cannot install Pokemon visuals")
+        server_folder = find_child(server_service, "Server")
+        if server_folder is None:
+            server_folder = new_instance("Folder", "Server", "RBX_TFFA_SERVER_FOLDER")
+            server_service.append(server_folder)
+        visual_name = "PokemonVisuals"
+        visual_source = visual_path.read_text(encoding="utf-8")
+        visual_item = find_child(server_folder, visual_name)
+        if visual_item is None or visual_item.get("class") not in ("Script", "LocalScript", "ModuleScript"):
+            visual_item = new_instance("Script", visual_name, "RBX_TFFA_POKEMON_VISUALS")
+            server_folder.append(visual_item)
+            added += 1
+            report.append("ADDED: ServerScriptService/Server/PokemonVisuals [Script]")
+        else:
+            report.append("UPDATED: ServerScriptService/Server/PokemonVisuals [Script]")
+        ensure_source(visual_item, visual_source)
+
     ET.indent(tree, space="  ")
     tree.write(OUT_PATH, encoding="utf-8", xml_declaration=True)
     REPORT_PATH.write_text(

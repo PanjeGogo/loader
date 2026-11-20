@@ -53,5 +53,48 @@ with zipfile.ZipFile("TFFA_update_v3.zip") as z:
             for i,line in enumerate(data.splitlines(),1):
                 if re.search(r"food|bait|feed|zone|area|region|world|asset|rbxassetid|textureid|meshid|image",line,re.I):
                     lines.append(f"{n}:{i}: {line.strip()[:300]}")
+
+# Structured inventory: count top-level food models and biome/zone containers.
+def find_path(root_item, wanted):
+    for node, path in walk(root_item):
+        if path.split("/")[-1] == wanted:
+            return node
+    return None
+
+def direct_inventory(parent, label):
+    lines.append("")
+    lines.append(f"=== {label} ===")
+    if parent is None:
+        lines.append("NOT FOUND")
+        return
+    for node in children(parent):
+        nm=get_prop(node,"Name") or "<unnamed>"
+        lines.append(f"{nm} [{node.get('class')}]")
+
+replicated=find_path(root,"ReplicatedStorage")
+workspace=find_path(root,"Workspace")
+food_folder=find_path(root,"Food") if replicated is None else next((x for x in children(replicated) if get_prop(x,"Name")=="Food"),None)
+biomes_folder=next((x for x in children(workspace) if get_prop(x,"Name")=="Biomes"),None) if workspace is not None else None
+direct_inventory(food_folder,"FOOD MODEL INVENTORY (DIRECT CHILDREN)")
+direct_inventory(biomes_folder,"BIOME / ZONE INVENTORY (DIRECT CHILDREN)")
+
+# Extract Lua source from in-place ModuleScripts to identify zone keys/references.
+lines += ["","=== CONFIG / ZONE SCRIPT SOURCES ==="]
+for node,path in walk(root):
+    nm=get_prop(node,"Name") or ""
+    if node.get("class") in ("ModuleScript","Script","LocalScript") and re.search(r"config|zone|area|biome|world|food",nm,re.I):
+        props=node.find("Properties")
+        src=""
+        if props is not None:
+            for p in props:
+                if p.get("name")=="Source":
+                    src=p.text or ""
+                    break
+        if src:
+            lines.append(f"--- {path} ---")
+            for i,line in enumerate(src.splitlines(),1):
+                if re.search(r"zone|area|biome|world|food|price|rarity|unlock|spawn|teleport",line,re.I):
+                    lines.append(f"{i}: {line.strip()[:400]}")
+
 Path("source-audit.txt").write_text("\n".join(lines)+"\n",encoding="utf-8")
 print("\n".join(lines))

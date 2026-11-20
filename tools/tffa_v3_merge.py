@@ -71,11 +71,17 @@ def main():
 
     tree = ET.parse(XML_PATH)
     root = tree.getroot()
-    datamodel = root.find("./Item[@class='DataModel']")
+    # Place files converted to RBXLX have service Items directly under
+    # the <roblox> root; they do not contain a DataModel Item. Model files
+    # may contain a DataModel, so support both layouts.
+    datamodel = next(
+        (n for n in root.iter("Item") if n.get("class") == "DataModel"),
+        None,
+    )
     if datamodel is None:
-        datamodel = next((n for n in root.iter("Item") if n.get("class") == "DataModel"), None)
-    if datamodel is None:
-        raise SystemExit("Could not locate DataModel in converted RBXLX")
+        if root.tag != "roblox":
+            raise SystemExit(f"Unexpected RBXLX root element: {root.tag!r}")
+        datamodel = root
 
     report = []
     added = updated = 0

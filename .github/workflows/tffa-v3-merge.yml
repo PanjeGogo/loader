@@ -7,7 +7,8 @@ on:
     paths:
       - "TFFA_update_v3.zip"
       - "trow food for animal fully script.rbxl"
-      - "tools/tffa_v3_merge.py"\n      - "tools/tffa_v3_inspect.py"
+      - "tools/tffa_v3_merge.py"
+      - "tools/tffa_v3_inspect.py"
       - ".github/workflows/tffa-v3-merge.yml"
   workflow_dispatch:
 
@@ -36,6 +37,10 @@ jobs:
         run: |
           rbx-util convert "trow food for animal fully script.rbxl" base.rbxlx
 
+      - name: Audit current zones and food assets
+        run: |
+          python tools/tffa_v3_inspect.py
+
       - name: Merge TFFA v3 scripts
         run: |
           python tools/tffa_v3_merge.py
@@ -51,16 +56,17 @@ jobs:
         run: |
           mkdir -p build-output
           cp TFFA_merged.rbxl build-output/TFFA_merged.rbxl
-          cp merge-report.txt build-output/merge-report.txt\n          cp source-audit.txt build-output/source-audit.txt
+          cp merge-report.txt build-output/merge-report.txt
+          cp source-audit.txt build-output/source-audit.txt
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add build-output/TFFA_merged.rbxl build-output/merge-report.txt build-output/source-audit.txt
           if ! git diff --cached --quiet; then
-            git commit -m "Publish merged TFFA v3 place"
+            git commit -m "Publish merged TFFA v3 place and source audit"
             git push origin HEAD:tffa-v3-merge
           fi
 
-      - name: Upload merged Roblox place
+      - name: Upload merged Roblox place and audit
         uses: actions/upload-artifact@v4
         with:
           name: TFFA-v3-merged-place
@@ -68,5 +74,6 @@ jobs:
             TFFA_merged.rbxl
             merged.rbxlx
             merge-report.txt
+            source-audit.txt
           if-no-files-found: error
           retention-days: 14

@@ -12,7 +12,7 @@ on:
   workflow_dispatch:
 
 permissions:
-  contents: read
+  contents: write
 
 jobs:
   merge-place:
@@ -46,6 +46,19 @@ jobs:
           rbx-util convert TFFA_merged.rbxl roundtrip-check.rbxlx
           test -s TFFA_merged.rbxl
           grep -q '<roblox' roundtrip-check.rbxlx
+
+      - name: Publish merged file to build-output on this branch
+        run: |
+          mkdir -p build-output
+          cp TFFA_merged.rbxl build-output/TFFA_merged.rbxl
+          cp merge-report.txt build-output/merge-report.txt
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add build-output/TFFA_merged.rbxl build-output/merge-report.txt
+          if ! git diff --cached --quiet; then
+            git commit -m "Publish merged TFFA v3 place"
+            git push origin HEAD:tffa-v3-merge
+          fi
 
       - name: Upload merged Roblox place
         uses: actions/upload-artifact@v4

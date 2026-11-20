@@ -56,8 +56,6 @@ local variants = {
     {"Eclipse Ball", Color3.fromRGB(45, 45, 65), Color3.fromRGB(115, 85, 145), Color3.fromRGB(225, 185, 85)},
     {"Prism Ball", Color3.fromRGB(225, 95, 145), Color3.fromRGB(195, 225, 245), Color3.fromRGB(95, 185, 195)},
     {"Aurora Ball", Color3.fromRGB(75, 175, 165), Color3.fromRGB(225, 215, 245), Color3.fromRGB(145, 105, 195)},
-    {"Comet Ball", Color3.fromRGB(75, 105, 175), Color3.fromRGB(225, 235, 245), Color3.fromRGB(225, 145, 75)},
-    {"Galaxy Ball", Color3.fromRGB(75, 55, 125), Color3.fromRGB(165, 145, 205), Color3.fromRGB(55, 35, 95)},
 }
 
 local function makePart(parent, name, shape, size, cf, color, material)

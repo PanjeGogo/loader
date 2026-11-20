@@ -58,7 +58,7 @@ local variants = {
     {"Aurora Ball", Color3.fromRGB(75, 175, 165), Color3.fromRGB(225, 215, 245), Color3.fromRGB(145, 105, 195)},
 }
 
-local function makePart(parent, name, shape, size, cf, color, material)
+local function makePart(parent, rootPart, name, shape, size, cf, color, material)
     local part = Instance.new("Part")
     part.Name = name
     part.Shape = shape
@@ -66,7 +66,8 @@ local function makePart(parent, name, shape, size, cf, color, material)
     part.CFrame = cf
     part.Color = color
     part.Material = material or Enum.Material.SmoothPlastic
-    part.Anchored = true
+    part.Anchored = false
+    part.Massless = true
     part.CanCollide = false
     part.CanTouch = false
     part.CanQuery = false
@@ -74,6 +75,10 @@ local function makePart(parent, name, shape, size, cf, color, material)
     part.TopSurface = Enum.SurfaceType.Smooth
     part.BottomSurface = Enum.SurfaceType.Smooth
     part.Parent = parent
+    local weld = Instance.new("WeldConstraint")
+    weld.Part0 = rootPart
+    weld.Part1 = part
+    weld.Parent = part
     return part
 end
 
@@ -88,6 +93,8 @@ local function applyBall(model, index, variant)
     local diameter = math.clamp(math.min(boxSize.X, boxSize.Y, boxSize.Z), 1.35, 3.25)
     if diameter ~= diameter then diameter = 2 end
     local center = boxCF
+    local rootPart = model.PrimaryPart or model:FindFirstChildWhichIsA("BasePart", true)
+    if not rootPart then return end
     local visual = Instance.new("Folder")
     visual.Name = "_PokemonBallVisual"
     visual:SetAttribute("Variant", variant[1])
@@ -106,11 +113,11 @@ local function applyBall(model, index, variant)
     local bodyColor = variant[3]
     local topColor = variant[2]
     local bandColor = variant[4]
-    makePart(visual, "BallBody", Enum.PartType.Ball, Vector3.new(d, d, d), center, bodyColor)
-    makePart(visual, "TopShell", Enum.PartType.Ball, Vector3.new(d * 0.985, d * 0.52, d * 0.985), center * CFrame.new(0, d * 0.235, 0), topColor)
-    makePart(visual, "EquatorBand", Enum.PartType.Cylinder, Vector3.new(d * 1.012, d * 0.075, d * 1.012), center * CFrame.new(0, 0, 0) * CFrame.Angles(0, 0, math.rad(90)), Color3.fromRGB(25, 25, 30), Enum.Material.Metal)
-    makePart(visual, "ButtonOuter", Enum.PartType.Ball, Vector3.new(d * 0.24, d * 0.24, d * 0.12), center * CFrame.new(0, 0, -d * 0.485), Color3.fromRGB(25, 25, 30), Enum.Material.Metal)
-    makePart(visual, "ButtonInner", Enum.PartType.Ball, Vector3.new(d * 0.13, d * 0.13, d * 0.07), center * CFrame.new(0, 0, -d * 0.535), bandColor)
+    makePart(visual, rootPart, "BallBody", Enum.PartType.Ball, Vector3.new(d, d, d), center, bodyColor)
+    makePart(visual, rootPart, "TopShell", Enum.PartType.Ball, Vector3.new(d * 0.985, d * 0.52, d * 0.985), center * CFrame.new(0, d * 0.235, 0), topColor)
+    makePart(visual, rootPart, "EquatorBand", Enum.PartType.Cylinder, Vector3.new(d * 1.012, d * 0.075, d * 1.012), center * CFrame.new(0, 0, 0) * CFrame.Angles(0, 0, math.rad(90)), Color3.fromRGB(25, 25, 30), Enum.Material.Metal)
+    makePart(visual, rootPart, "ButtonOuter", Enum.PartType.Ball, Vector3.new(d * 0.24, d * 0.24, d * 0.12), center * CFrame.new(0, 0, -d * 0.485), Color3.fromRGB(25, 25, 30), Enum.Material.Metal)
+    makePart(visual, rootPart, "ButtonInner", Enum.PartType.Ball, Vector3.new(d * 0.13, d * 0.13, d * 0.07), center * CFrame.new(0, 0, -d * 0.535), bandColor)
 end
 
 local foods = {}

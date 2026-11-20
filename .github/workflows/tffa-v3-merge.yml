@@ -9,6 +9,7 @@ on:
       - "trow food for animal fully script.rbxl"
       - "tools/tffa_v3_merge.py"
       - "tools/tffa_v3_inspect.py"
+      - "tools/PokemonVisuals.server.lua"
       - ".github/workflows/tffa-v3-merge.yml"
   workflow_dispatch:
 

@@ -7,7 +7,7 @@ on:
     paths:
       - "TFFA_update_v3.zip"
       - "trow food for animal fully script.rbxl"
-      - "tools/tffa_v3_merge.py"
+      - "tools/tffa_v3_merge.py"\n      - "tools/tffa_v3_inspect.py"
       - ".github/workflows/tffa-v3-merge.yml"
   workflow_dispatch:
 
@@ -51,10 +51,10 @@ jobs:
         run: |
           mkdir -p build-output
           cp TFFA_merged.rbxl build-output/TFFA_merged.rbxl
-          cp merge-report.txt build-output/merge-report.txt
+          cp merge-report.txt build-output/merge-report.txt\n          cp source-audit.txt build-output/source-audit.txt
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add build-output/TFFA_merged.rbxl build-output/merge-report.txt
+          git add build-output/TFFA_merged.rbxl build-output/merge-report.txt build-output/source-audit.txt
           if ! git diff --cached --quiet; then
             git commit -m "Publish merged TFFA v3 place"
             git push origin HEAD:tffa-v3-merge

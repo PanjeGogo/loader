@@ -1,7 +1,7 @@
 TFFA UPDATE V3 MERGE REPORT
 Scripts found in ZIP: 20
 Existing scripts updated: 7
-New scripts added: 13
+New scripts added: 14
 
 UPDATED: ReplicatedStorage/AnimalsData.lua [ModuleScript]
 ADDED: ReplicatedStorage/CmdrClient/Commands/SetRole.lua [ModuleScript]
@@ -23,3 +23,11 @@ ADDED: StarterPlayer/StarterPlayerScripts/Client/ClientMain/init.client.lua [Loc
 ADDED: StarterPlayer/StarterPlayerScripts/Client/Controllers/PokemonController.lua [ModuleScript]
 ADDED: StarterPlayer/StarterPlayerScripts/Client/Controllers/StaffPanel.lua [ModuleScript]
 ADDED: StarterPlayer/StarterPlayerScripts/Client/Controllers/StaffPoll.lua [ModuleScript]
+RENAMED BIOME: Desert -> Desert Resort
+RENAMED BIOME: Ocean -> Seafoam Island
+RENAMED BIOME: Mountains -> Mt. Silver
+RENAMED BIOME: Taiga -> Viridian Forest
+RENAMED BIOME: Winter -> Snowpoint City
+RENAMED BIOME: DeepWaters -> Sootopolis City
+RENAMED BIOME: MythicalParadise -> Aether Paradise
+ADDED: ServerScriptService/Server/PokemonVisuals [Script]

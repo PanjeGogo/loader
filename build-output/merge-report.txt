@@ -1,0 +1,25 @@
+TFFA UPDATE V3 MERGE REPORT
+Scripts found in ZIP: 20
+Existing scripts updated: 7
+New scripts added: 13
+
+UPDATED: ReplicatedStorage/AnimalsData.lua [ModuleScript]
+ADDED: ReplicatedStorage/CmdrClient/Commands/SetRole.lua [ModuleScript]
+ADDED: ReplicatedStorage/CmdrClient/Commands/StaffList.lua [ModuleScript]
+UPDATED: ReplicatedStorage/CmdrClient/Types/BeforeRun.lua [ModuleScript]
+ADDED: ReplicatedStorage/CmdrClient/Types/StaffRoleType.lua [ModuleScript]
+UPDATED: ReplicatedStorage/Config/AdminsConfig.lua [ModuleScript]
+ADDED: ReplicatedStorage/Config/PokemonConfig.lua [ModuleScript]
+UPDATED: ReplicatedStorage/Config/ReleaseConfig.lua [ModuleScript]
+ADDED: ReplicatedStorage/Config/StaffConfig.lua [ModuleScript]
+UPDATED: ReplicatedStorage/Shared/Remotes.lua [ModuleScript]
+UPDATED: ServerScriptService/CmdrServer.server.lua [Script]
+UPDATED: ServerScriptService/Server/Main.server.lua [Script]
+ADDED: ServerScriptService/Server/ModerationService.lua [ModuleScript]
+ADDED: ServerScriptService/Server/PokemonService.lua [ModuleScript]
+ADDED: ServerScriptService/Server/StaffPanelService.lua [ModuleScript]
+ADDED: ServerScriptService/Server/StaffService.lua [ModuleScript]
+ADDED: StarterPlayer/StarterPlayerScripts/Client/ClientMain/init.client.lua [LocalScript]
+ADDED: StarterPlayer/StarterPlayerScripts/Client/Controllers/PokemonController.lua [ModuleScript]
+ADDED: StarterPlayer/StarterPlayerScripts/Client/Controllers/StaffPanel.lua [ModuleScript]
+ADDED: StarterPlayer/StarterPlayerScripts/Client/Controllers/StaffPoll.lua [ModuleScript]

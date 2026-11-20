@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Merge TFFA_update_v3 Lua scripts into a converted Roblox XML place."""
+"""Merge TFFA_update_v3 Lua scripts into a converted Roblox XML place."""\n# Trigger a fresh validation after repairing the audit workflow.
 from __future__ import annotations
 
 import pathlib

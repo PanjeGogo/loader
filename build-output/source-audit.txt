@@ -7565,3 +7565,909 @@ TFFA_update_v3/ServerScriptService/Server/PokemonService.lua:180: return assetId
 TFFA_update_v3/ServerScriptService/Server/PokemonService.lua:214: if #entry.Assets > 0 then
 TFFA_update_v3/ServerScriptService/Server/PokemonService.lua:234: local ok, assetId = pcall(buildAnimal, modelName, entry, folder, originals)
 TFFA_update_v3/ServerScriptService/Server/PokemonService.lua:235: if ok and assetId then
+
+=== FOOD MODEL INVENTORY (DIRECT CHILDREN) ===
+Pear [Model]
+WaterMelon [Model]
+Toast [Model]
+Croissant [Model]
+Apple [Model]
+Cheese [Model]
+Carrot [Model]
+Bread Loaf [Model]
+Banana [Model]
+Golden Apple [Model]
+Mushroom [Model]
+Orange [Model]
+Chocolate [Model]
+Elder Strawberry [Model]
+Bacon [Model]
+Burger [Model]
+Shank [Model]
+Fillet [Model]
+Star Jelly [Model]
+Steak [Model]
+Crystal Melon [Model]
+Ember Bacon [Model]
+Royal Steak [Model]
+Lava Steak [Model]
+Dragon's Apple [Model]
+Phoenix Fillet [Model]
+Glowshroom [Model]
+Sundae Tower [Model]
+Golden Corn [Model]
+Starlight Donut [Model]
+Roast Turkey [Model]
+Caramel Apple [Model]
+Candy Corn [Model]
+Hot Cider [Model]
+Golden Pumpkin [Model]
+Ghost Chowder [Model]
+Calamari Rings [Model]
+Phantom Lobster [Model]
+Toxic Donut [Model]
+Mutant Melon [Model]
+Atomic Pizza [Model]
+Uranium Cake [Model]
+Cursed Candy Apple [Model]
+Ringmaster Cake [Model]
+Spectral Cotton Candy [Model]
+Ghost Popcorn [Model]
+Royal Mooncake [Model]
+Black Sun Souffle [Model]
+Sunwheel Tart [Model]
+Crescent Pear [Model]
+
+=== BIOME / ZONE INVENTORY (DIRECT CHILDREN) ===
+Forest [Folder]
+Savana [Folder]
+Desert [Folder]
+Jungle [Folder]
+Ocean [Folder]
+Mountains [Folder]
+Taiga [Folder]
+Winter [Folder]
+PrehistoricForest [Folder]
+DeepWaters [Folder]
+Hell [Folder]
+AncientRuins [Folder]
+MythicalParadise [Folder]
+ShadowRealm [Folder]
+EclipseKingdom [Folder]
+PhantomHarbor [Folder]
+HarvestFields [Folder]
+NuclearWasteland [Folder]
+CursedCarnival [Folder]
+
+=== CONFIG / ZONE SCRIPT SOURCES ===
+--- <unnamed>/StarterPlayer/StarterPlayerScripts/Client/ClientMain/ObserversHandlerClient/UIZonePad ---
+8: local Zone = require(ReplicatedStorage.Packages.Zone)
+24: warn(`[UIZonePad] {part:GetFullName()} has no UIController attribute naming a controller`)
+40: warn(`[UIZonePad] {moduleScript.Name} needs Open, Close, IsOpen and Closed`)
+70: warn(`[UIZonePad] {part:GetFullName()} is tagged but is not a BasePart`)
+81: local v = maid:Add(Zone.new(part))
+--- <unnamed>/StarterPlayer/StarterPlayerScripts/Client/Controllers/AreaBanner ---
+4: local AreasConfig = require(ReplicatedStorage.Config.AreasConfig)
+11: local AreaBanner = {}
+12: AreaBanner.__index = AreaBanner
+14: function AreaBanner.new(parent2)
+15: local self = setmetatable({}, AreaBanner)
+18: Name = "AreaBanner",
+40: Name = "AreaName",
+83: function AreaBanner:SetArea(p)
+89: local v = p and AreasConfig.Get(p)
+118: function AreaBanner:FadeOut(value)
+137: function AreaBanner:Destroy()
+146: return AreaBanner
+--- <unnamed>/StarterPlayer/StarterPlayerScripts/Client/Controllers/RingRush/RingRushWorldVfx ---
+8: local WorldVfx = RingRushConfig.WorldVfx
+12: local RingRushWorldVfx = {}
+13: RingRushWorldVfx.__index = RingRushWorldVfx
+15: local function makeZone(descendant)
+43: table.insert(result, makeZone(descendant))
+91: local function updateZones(object)
+94: for _, zone in object.Zones do
+95: local v = zone.IsRevealed
+98: if z <= zone.NearZ + WorldVfx.AheadReach then
+99: v = zone.FarZ - WorldVfx.BehindReach <= z
+105: if v == zone.IsOn then
+109: zone.IsOn = v
+111: for _, emitter in zone.Emitters do
+117: function RingRushWorldVfx.new(parent)
+119: local v = maid:Add(RingRushAssets:WaitForChild("WorldVfx"):Clone())
+120: local zones, beams = collectEffects(v)
+124: Zones = zones,
+129: }, RingRushWorldVfx)
+135: object.NextCheck = now + WorldVfx.CheckSeconds
+136: updateZones(object)
+142: function RingRushWorldVfx:BeginReveal(beamFadeSeconds: number)
+152: function RingRushWorldVfx.RevealTo(p, p2: number)
+153: for _, zone in p.Zones do
+154: if p2 <= zone.NearZ then
+155: zone.IsRevealed = true
+160: function RingRushWorldVfx:Destroy()
+164: return RingRushWorldVfx
+--- <unnamed>/ReplicatedStorage/FoodsData ---
+--- <unnamed>/ReplicatedStorage/UserGenerated/Analytics/MicroProfilerConfig ---
+--- <unnamed>/ReplicatedStorage/UserGenerated/Observability/WorldRecorder ---
+155: local function isWorldGui(instance)
+242: local WorldRecorder = {}
+243: WorldRecorder.__index = WorldRecorder
+245: function WorldRecorder.new(registry, trackGui, watchAnimator, maxInstances: number, flag: boolean?)
+287: WorldPoll = newPollQueue(),
+310: local object = setmetatable(v9, WorldRecorder)
+332: function WorldRecorder:_propId(p: string, p2: string)
+337: function WorldRecorder._kidsOf(p, p2)
+348: function WorldRecorder:_markProp(p, p2: number)
+359: function WorldRecorder:_isRecordedRoot(p, terrain)
+387: function WorldRecorder:_setJointParts(p, p2, p3)
+463: function WorldRecorder:_jointEnds(p)
+501: function WorldRecorder:_read(instance, p: string)
+560: function WorldRecorder:_updateInCharacter(instance)
+578: function WorldRecorder:_parentIdOf(sky, terrain, p: number?)
+608: function WorldRecorder:_inDomain(instance): boolean
+626: function WorldRecorder:_isBakedRoot(p): boolean
+634: function WorldRecorder:_isUnbaked(instance): boolean
+638: function WorldRecorder:_inBaked(p)
+655: function WorldRecorder:_hiddenByBake(p, p2)
+659: function WorldRecorder:_track(instance, p: number?)
+905: function WorldRecorder:_connect(instance, p: string, p2: string)
+1058: function WorldRecorder:_updatePolling(p)
+1074: local worldPoll = self.WorldPoll
+1077: if v11 and not worldPoll.Set[p] then
+1078: worldPoll.Set[p] = true
+1079: table.insert(worldPoll.List, p)
+1081: worldPoll.Set[p] = nil
+1085: function WorldRecorder:_setPlayerPolled(p, p2)
+1117: function WorldRecorder:_checkRoots(p, p2, p3: number)
+1134: function WorldRecorder:_writeProp(p, p2: number, p3: number, value, p4: number, flag: boolean?)
+1303: function WorldRecorder:_setSequence(p, p2: number, p3: string, time: number)
+1321: function WorldRecorder:_writeValue(inst, id: number, propId: number, p: number, p2, p3: number, lerpUnits: number)
+1357: function WorldRecorder:_writeSingle(p, p2: number, p3: number, p4: number, p5, p6: number, p7: number, str: string)
+1415: function WorldRecorder:_flushGroups()
+1468: function WorldRecorder:_writeMotion(p, p2: number, propId: number, cframe: CFrame, p3: number)
+1659: function WorldRecorder:_checkMotions()
+1685: function WorldRecorder:_isCharacterPart(p): boolean
+1689: function WorldRecorder:_characterPlayer(p)
+1699: function WorldRecorder:_untrack(p)
+1734: self.WorldPoll.Set[p] = nil
+1754: function WorldRecorder:_untrackTree(p, p2)
+1781: function WorldRecorder:_watchFiltered(folder)
+1798: function WorldRecorder:_discover(p, p2: number)
+1816: function WorldRecorder:_mark(animator)
+1830: function WorldRecorder:_walk(p: number): boolean
+1866: function WorldRecorder:_scope(instance)
+1901: function WorldRecorder:_watchPath(instance, p)
+1958: function WorldRecorder:_markAll(items)
+1966: function WorldRecorder:_pin(instance)
+1978: function WorldRecorder:_unpin(p)
+1989: function WorldRecorder:_characterAdded(p)
+2002: function WorldRecorder:_characterRemoving(p)
+2009: function WorldRecorder:_watchPlayers()
+2033: function WorldRecorder:_watchBaked()
+2056: function WorldRecorder:_watchUnbaked()
+2095: function WorldRecorder:_holdParticleHost(p)
+2112: function WorldRecorder:_releaseParticleHost(p)
+2138: function WorldRecorder:AddParticle(p)
+2160: function WorldRecorder:SetEmissionScale(emissionScale: number)
+2167: function WorldRecorder:_flushEmissionScale()
+2186: function WorldRecorder:RemoveParticle(p)
+2198: function WorldRecorder:WriteEmit(instance, p: number, p2: number): boolean
+2249: function WorldRecorder:Snapshot()
+2301: function WorldRecorder:_flushStructure()
+2453: function WorldRecorder:_flushRoots()
+2513: function WorldRecorder:_flushProps()
+2631: function WorldRecorder:_flushNames()
+2652: function WorldRecorder:_poll(state)
+2701: function WorldRecorder:_followedRoot(p)
+2737: function WorldRecorder:_sampleCamera()
+2754: function WorldRecorder:_lerpUnits(p: number, flag: boolean)
+2764: function WorldRecorder:_flushCamera()
+2802: function WorldRecorder:_flushFollow(data, root)
+2903: function WorldRecorder:TrackCharacter(folder)
+2917: function WorldRecorder:WriteCamera()
+2925: function WorldRecorder:_pollBaked()
+2957: function WorldRecorder:Flush()
+2966: self:_poll(self.WorldPoll)
+2972: function WorldRecorder:PollPlayers()
+2999: function WorldRecorder:Destroy()
+3060: self.WorldPoll = newPollQueue()
+3070: return WorldRecorder
+--- <unnamed>/ReplicatedStorage/UserGenerated/SharedConfig ---
+--- <unnamed>/ReplicatedStorage/CmdrClient/Types/FoodType ---
+5: local FoodsConfig = require(ReplicatedStorage.Config.FoodsConfig)
+7: local function GetFoods()
+8: local list = FoodsConfig.List
+9: local foods = table.create(#list)
+12: foods[k] = { Name = item.Name, Value = k }
+15: return foods
+19: local catalogType = CmdrUtil.MakeCatalogType("food", GetFoods)
+20: registry:RegisterType("food", catalogType)
+21: registry:RegisterType("foods", registry.Cmdr.Util.MakeListableType(catalogType))
+--- <unnamed>/ReplicatedStorage/Config/GameConfig ---
+32: HandFoodSize = 1.6,
+110: DramaticRarityIndex = 5,
+113: ShortRarityIndex = 2,
+--- <unnamed>/ReplicatedStorage/Config/AreasConfig ---
+4: local AreasConfig = {}
+5: AreasConfig.SegmentLength = 24
+6: AreasConfig.SubAreas = 3
+7: AreasConfig.StartGap = 5
+14: RarityPattern = {
+31: RarityPattern = {
+48: RarityPattern = { "Common", "Uncommon", "Uncommon", "Uncommon", "Rare", "Rare", "Epic", "Epic" }
+56: RarityPattern = {
+73: RarityPattern = {
+90: RarityPattern = {
+107: RarityPattern = { "Rare", "Rare", "Epic", "Epic", "Legendary", "Legendary", "Mythic", "Mythic" }
+115: RarityPattern = {
+132: RarityPattern = {
+149: RarityPattern = {
+166: RarityPattern = {
+183: RarityPattern = {
+200: RarityPattern = {
+217: RarityPattern = {
+235: RarityPattern = {
+253: RarityPattern = {
+272: RarityPattern = {
+288: Foods = 4,
+289: FoodCenters = { 4, 8, 10, 12.4 },
+297: FoodPools = {
+313: RarityPattern = {
+329: Foods = 4,
+330: FoodCenters = { 4, 8, 10, 12.4 },
+338: FoodPools = {
+354: RarityPattern = {
+370: Foods = 4,
+371: FoodCenters = { 4, 8, 10, 12.4 },
+379: FoodPools = {
+387: AreasConfig.All = ReleaseConfig.Filter({
+409: AreasConfig.ByKey = {}
+410: AreasConfig.IndexByKey = {}
+411: local startGap = AreasConfig.StartGap
+413: for i, v20 in ipairs(AreasConfig.All) do
+415: v20.Length = v20.Segments * AreasConfig.SegmentLength
+418: AreasConfig.ByKey[v20.Key] = v20
+419: AreasConfig.IndexByKey[v20.Key] = i
+422: AreasConfig.List = {}
+424: ReleaseConfig.FillUnlocked(AreasConfig.List, AreasConfig.All)
+425: local item = AreasConfig.List[#AreasConfig.List]
+426: AreasConfig.TotalDistance = item and item.StartDistance + item.Length or AreasConfig.StartGap
+432: function AreasConfig.IsPlayable(p): boolean
+433: return p ~= nil and p.Index <= #AreasConfig.List
+436: function AreasConfig.ProgressForDistance(p)
+437: local list = AreasConfig.List
+454: function AreasConfig.Get(p)
+455: return AreasConfig.List[p]
+458: function AreasConfig.Count()
+459: return #AreasConfig.List
+462: return AreasConfig
+--- <unnamed>/ReplicatedStorage/Config/RarityConfig ---
+2: local RarityConfig = {}
+16: RarityConfig.List = {
+84: RarityConfig.ByName = {}
+86: for i, item in ipairs(RarityConfig.List) do
+88: RarityConfig.ByName[item.Name] = item
+91: function RarityConfig.Get(p)
+92: return RarityConfig.ByName[p] or RarityConfig.List[1]
+95: function RarityConfig.IndexOf(p)
+96: local v = RarityConfig.ByName[p]
+100: return RarityConfig
+--- <unnamed>/ReplicatedStorage/Config/LevelConfig ---
+2: local AreasConfig = require(script.Parent.AreasConfig)
+8: LevelConfig.BaseThrowPower = AreasConfig.List[1].StartDistance + AreasConfig.List[1].Length / AreasConfig.SubAreas / 2 - LevelConfig.FirstThrowMeter
+11: LevelConfig.XpPerArea = 4
+69: LevelConfig.MaxLevel = LevelConfig.LevelForDistance(AreasConfig.TotalDistance)
+75: local progressForDistance = AreasConfig.ProgressForDistance(LevelConfig.ThrowPowerForLevel(1))
+85: local progressForDistance2 = AreasConfig.ProgressForDistance(LevelConfig.ThrowPowerForLevel(p))
+88: (math.floor(LevelConfig.BaseXp * LevelConfig.XpPerArea ^ (progressForDistance2 - progressForDistance) * LevelConfig.PaceForProgress(progressForDistance2, p2) + 0.5))
+--- <unnamed>/ReplicatedStorage/Config/StandsConfig ---
+7: { Name = "Wooden Bar", XpPerRep = 1, Price = 1 },
+8: { Name = "Steel Bar", XpPerRep = 2, Price = 50 },
+9: { Name = "Gold Bar", XpPerRep = 4, Price = 2000 },
+10: { Name = "Cyan Bar", XpPerRep = 8, Price = 12000 },
+11: { Name = "Violet Bar", XpPerRep = 16, Price = 100000 },
+12: { Name = "Ruby Bar", XpPerRep = 32, Price = 600000 },
+13: { Name = "Amber Bar", XpPerRep = 64, Price = 6000000 },
+14: { Name = "Chrome Bar", XpPerRep = 128, Price = 38000000 },
+15: { Name = "Obsidian Bar", XpPerRep = 256, Price = 320000000 },
+16: { Name = "Aqua Neon Bar", XpPerRep = 512, Price = 2000000000 },
+17: { Name = "Pink Neon Bar", XpPerRep = 1024, Price = 15000000000 },
+18: { Name = "Lime Neon Bar", XpPerRep = 2048, Price = 90000000000 },
+19: { Name = "Solar Bar", XpPerRep = 4096, Price = 680000000000 },
+20: { Name = "Frost Bar", XpPerRep = 8192, Price = 4200000000000 },
+21: { Name = "Magenta Bar", XpPerRep = 16384, Price = 28000000000000 },
+22: { Name = "Crimson Bar", XpPerRep = 32768, Price = 170000000000000 },
+23: { Name = "Emerald Bar", XpPerRep = 65536, Price = 1200000000000000 },
+24: { Name = "Sapphire Bar", XpPerRep = 131072, Price = 7000000000000000 },
+25: { Name = "Amethyst Bar", XpPerRep = 262144, Price = 5e16 },
+26: { Name = "Inferno Bar", XpPerRep = 524288, Price = 3e17 },
+27: { Name = "Blue Flame Bar", XpPerRep = 1048576, Price = 2e18 },
+28: { Name = "Holy Bar", XpPerRep = 2097152, Price = 1.2e19 },
+29: { Name = "Celestial Bar", XpPerRep = 4194304, Price = 8e19 },
+30: { Name = "Void Bar", XpPerRep = 8388608, Price = 5e20 },
+31: { Name = "Dragon Bar", XpPerRep = 16777216, Price = 3e21 },
+32: { Name = "Aurora Bar", XpPerRep = 33554432, Price = 1.8e22 },
+33: { Name = "Galaxy Bar", XpPerRep = 67108864, Price = 1.2e23 },
+34: { Name = "Infinity Bar", XpPerRep = 134217728, Price = 7e23 },
+35: { Name = "Eclipse Bar", XpPerRep = 268435456, Price = 3e24 },
+36: { Name = "Omega Bar", XpPerRep = 536870912, Price = 3e26, Release = "ShadowRealm" },
+40: Price = 6.000000000000001e27,
+43: { Name = "Nightfall Bar", XpPerRep = 2147483648, Price = 6e28, Release = "ShadowRealm" },
+44: { Name = "Eternal Bar", XpPerRep = 4294967296, Price = 5e29, Release = "ShadowRealm" },
+45: { Name = "Abyss Bar", XpPerRep = 8589934592, Price = 2.5e30, Release = "ShadowRealm" },
+49: Price = 9.000000000000001e31,
+55: Price = 1.7999999999999998e33,
+61: Price = 1.8e34,
+62: SmoothPrice = 9e33,
+68: Price = 2.2000000000000003e36,
+74: Price = 4.500000000000001e37,
+75: SmoothPrice = 7.1e37,
+81: Price = 4.5000000000000006e38,
+82: SmoothPrice = 4.1e38,
+85: { Name = "Hazard Bar", XpPerRep = 1099511627776, Price = 1.5e41, Release = "NuclearWasteland" },
+89: Price = 6e42,
+90: SmoothPrice = 1.2e43,
+96: Price = 6e43,
+97: SmoothPrice = 1.1e44,
+103: Price = 2.2e44,
+104: SmoothPrice = 3.3e44,
+110: Price = 6.0000000000000005e44,
+111: SmoothPrice = 1.1e45,
+117: Price = 2.4e45,
+118: SmoothPrice = 2.9999999999999995e45,
+124: Price = 3.4999999999999997e47,
+130: Price = 2.2e49,
+131: SmoothPrice = 2.8000000000000003e49,
+137: Price = 1.5000000000000001e50,
+138: SmoothPrice = 1.9e50,
+144: Price = 5e50,
+145: SmoothPrice = 6.5e50,
+151: Price = 1.5e51,
+152: SmoothPrice = 1.9e51,
+158: Price = 6e51,
+159: SmoothPrice = 7.8e51,
+165: Price = 6e53,
+171: Price = 7.200000000000001e55,
+172: SmoothPrice = 7.9e55,
+178: Price = 7.300000000000001e56,
+179: SmoothPrice = 8e56,
+185: Price = 2.1000000000000003e57,
+186: SmoothPrice = 2.3e57,
+192: Price = 7.4e57,
+193: SmoothPrice = 8.1e57,
+199: Price = 1.9000000000000002e58,
+200: SmoothPrice = 2.1e58,
+211: ReleaseConfig.FillUnlocked(StandsConfig.List, StandsConfig.All)
+--- <unnamed>/ReplicatedStorage/Config/FoodsConfig ---
+3: local FoodsData = require(ReplicatedStorage:WaitForChild("FoodsData"))
+6: local FoodsConfig = {}
+8: FoodsConfig.All = ReleaseConfig.Filter({
+9: { Tier = 1, Bait = 1, Price = 0, Rarity = "Common" },
+10: { Tier = 1, Bait = 2, Price = 30, Rarity = "Common" },
+11: { Tier = 1, Bait = 3, Price = 150, Rarity = "Common" },
+12: { Tier = 2, Bait = 4, Price = 4000, Rarity = "Uncommon" },
+13: { Tier = 2, Bait = 5, Price = 20000, Rarity = "Uncommon" },
+14: { Tier = 3, Bait = 6, Price = 200000, Rarity = "Uncommon" },
+15: { Tier = 3, Bait = 7, Price = 1000000, Rarity = "Rare" },
+16: { Tier = 4, Bait = 8, Price = 12000000, Rarity = "Rare" },
+17: { Tier = 4, Bait = 9, Price = 60000000, Rarity = "Rare" },
+18: { Tier = 5, Bait = 10, Price = 650000000, Rarity = "Epic" },
+19: { Tier = 5, Bait = 11, Price = 3200000000, Rarity = "Epic" },
+20: { Tier = 6, Bait = 12, Price = 30000000000, Rarity = "Epic" },
+21: { Tier = 6, Bait = 13, Price = 150000000000, Rarity = "Legendary" },
+22: { Tier = 7, Bait = 14, Price = 1300000000000, Rarity = "Legendary" },
+23: { Tier = 7, Bait = 15, Price = 6800000000000, Rarity = "Legendary" },
+24: { Tier = 8, Bait = 16, Price = 57000000000000, Rarity = "Mythic" },
+25: { Tier = 8, Bait = 17, Price = 1500000000000000, Rarity = "Mythic" },
+26: { Tier = 9, Bait = 18, Price = 5e16, Rarity = "Mythic" },
+27: { Tier = 9, Bait = 19, Price = 1.2e17, Rarity = "Secret" },
+28: { Tier = 10, Bait = 20, Price = 4e18, Rarity = "Secret" },
+29: { Tier = 10, Bait = 21, Price = 1.8e19, Rarity = "Secret" },
+30: { Tier = 11, Bait = 22, Price = 1.2e20, Rarity = "Divine" },
+31: { Tier = 11, Bait = 23, Price = 7e20, Rarity = "Divine" },
+32: { Tier = 12, Bait = 24, Price = 4e21, Rarity = "Divine" },
+33: { Tier = 12, Bait = 25, Price = 2.7e22, Rarity = "Celestial" },
+34: { Tier = 13, Bait = 25.3, Price = 1.8e23, Rarity = "Celestial" },
+35: { Tier = 13, Bait = 26, Price = 4.5e23, Rarity = "Celestial" },
+36: { Tier = 13, Bait = 27, Price = 1.3999999999999998e24, Rarity = "Celestial" },
+37: { Tier = 13, Bait = 28, Price = 3.5e24, Rarity = "Celestial" },
+41: Price = 2.5e27,
+42: Rarity = "Eternal",
+48: Price = 2.8e28,
+49: Rarity = "Eternal",
+55: Price = 2.5e29,
+56: Rarity = "Eternal",
+62: Price = 7.5e32,
+63: Rarity = "Eternal",
+69: Price = 8.5e33,
+70: SmoothPrice = 4.4e33,
+71: Rarity = "Eternal",
+77: Price = 7.5e34,
+78: SmoothPrice = 4e34,
+79: Rarity = "Eternal",
+85: Price = 1.8e37,
+86: Rarity = "Cosmic",
+92: Price = 2e38,
+93: SmoothPrice = 1.7e38,
+94: Rarity = "Cosmic",
+100: Price = 1.8e39,
+101: SmoothPrice = 1.3e39,
+102: Rarity = "Cosmic",
+108: Price = 1.2000000000000001e42,
+109: Rarity = "Supreme",
+115: Price = 2e43,
+116: SmoothPrice = 3.1e43,
+117: Rarity = "Supreme",
+123: Price = 4e44,
+124: SmoothPrice = 5.7e44,
+125: Rarity = "Supreme",
+131: Price = 9e45,
+132: SmoothPrice = 6.3e45,
+133: Rarity = "Supreme",
+139: Price = 3e48,
+140: Rarity = "Supreme",
+146: Price = 5.8e49,
+147: SmoothPrice = 7.500000000000001e49,
+148: Rarity = "Supreme",
+154: Price = 9e50,
+155: SmoothPrice = 1.2e51,
+156: Rarity = "Supreme",
+162: Price = 1.2e52,
+163: SmoothPrice = 1.6e52,
+164: Rarity = "Supreme",
+170: Price = 5.000000000000001e54,
+171: Rarity = "Sovereign",
+177: Price = 1.7000000000000002e56,
+178: SmoothPrice = 1.9000000000000002e56,
+179: Rarity = "Sovereign",
+185: Price = 3.5000000000000004e57,
+186: SmoothPrice = 3.8e57,
+187: Rarity = "Sovereign",
+193: Price = 3.1e58,
+194: SmoothPrice = 3.4e58,
+195: Rarity = "Sovereign",
+200: for i, v in ipairs(FoodsConfig.All) do
+201: local v2 = FoodsData[i]
+203: v.ModelName = v2 and v2.ModelName or "Food" .. i
+204: v.Name = v2 and v2.Name or "Food " .. i
+208: FoodsConfig.List = {}
+210: ReleaseConfig.FillUnlocked(FoodsConfig.List, FoodsConfig.All)
+216: function FoodsConfig.Get(p)
+217: return FoodsConfig.List[p]
+220: function FoodsConfig.Count()
+221: return #FoodsConfig.List
+224: function FoodsConfig.GetAny(p)
+225: return FoodsConfig.All[p]
+228: function FoodsConfig.CountAll()
+229: return #FoodsConfig.All
+232: function FoodsConfig.IsLocked(p): boolean
+233: return FoodsConfig.All[p] ~= nil and FoodsConfig.List[p] == nil
+236: return FoodsConfig
+--- <unnamed>/ReplicatedStorage/Config/SoundsConfig ---
+--- <unnamed>/ReplicatedStorage/Config/MutationsConfig ---
+--- <unnamed>/ReplicatedStorage/Config/FogConfig ---
+10: FogConfig.TeleportDistance = 60
+21: FullStrengthAreasBack = 1,
+487: if selected and ReleaseConfig.IsUnlocked(k) then
+--- <unnamed>/ReplicatedStorage/Config/MonetizationConfig ---
+9: Price = 79,
+18: Price = 199,
+27: Price = 649,
+36: Price = 99,
+45: Price = 249,
+54: Price = 799,
+63: Price = 499,
+73: Price = 80,
+83: Price = 200,
+93: Price = 299,
+103: Price = 199,
+113: Price = 60,
+122: Price = 150,
+131: Price = 99,
+140: Price = 249,
+149: Price = 25,
+156: Price = 50,
+163: Price = 100,
+170: Price = 200,
+177: Price = 9,
+183: Price = 27,
+191: Price = 89,
+199: Price = 299,
+207: Price = 499,
+215: Price = 39,
+224: Price = 299,
+233: Price = 499,
+242: Price = 4,
+250: Price = 39,
+258: Price = 79,
+266: Price = 199,
+274: Price = 2,
+282: Price = 9,
+290: Price = 39,
+298: Price = 99,
+306: Price = 39,
+314: Price = 99,
+322: Price = 179,
+330: Price = 39,
+338: Price = 99,
+346: Price = 179,
+354: Price = 640,
+364: Price = 40,
+373: Price = 156,
+382: Price = 4400,
+391: Price = 12000,
+400: Price = 49,
+406: Price = 60,
+413: Price = 76,
+423: Price = 60,
+431: Price = 76,
+491: CheckPriceLevels = true,
+553: function MonetizationConfig.EggPrice(p)
+558: return product.Price
+574: EnchantedEggPrice = {
+575: Attribute = "EnchantedEggHigherPrice",
+643: return p3.Price
+647: return MonetizationConfig.PackAmount(p3.Key) / math.max(tonumber(v(p3)) or p3.Price, 1)
+817: task.spawn(callback)
+--- <unnamed>/ReplicatedStorage/Config/EggsConfig ---
+58: RarityStep = 0.9,
+93: local AreasConfig = require(ReplicatedStorage.Config.AreasConfig)
+97: for _, item in ipairs(AreasConfig.List) do
+106: local function getReachedAreas(p: number)
+108: local AreasConfig = require(ReplicatedStorage.Config.AreasConfig)
+110: local v = math.min(ReleaseReach.AreaForLevel(p), #AreasConfig.List)
+111: local reachedAreas = {}
+114: table.insert(reachedAreas, AreasConfig.List[i])
+117: return reachedAreas
+120: local function getRarityName(p: string) -- 2 equivalent calls inferred from this helper
+123: return v and v.Rarity or "Common"
+153: Rarity = getRarityName(v2.Animal), -- inferred equivalent call
+168: for _, v2 in getReachedAreas(value or 1) do
+176: result.AreaNames = names
+181: result.AreaNames = nil
+184: local RarityConfig = require(ReplicatedStorage.Config.RarityConfig)
+185: local rarityStep = v.RarityStep or 1
+197: v4[v5] = getRarityName(v5) -- inferred equivalent call
+200: local v6 = rarityStep ^ (RarityConfig.IndexOf(v4[v5]) - 1)
+225: Rarity = v4[animal]
+--- <unnamed>/ReplicatedStorage/Config/FenceConfig ---
+17: { Slots = 12, Price = 40000000, Grow = 1, Style = "Wood" },
+18: { Slots = 14, Price = 200000000000000, Grow = 2, Style = "Wood" },
+19: { Slots = 16, Price = 5e19, Grow = 2, Style = "Iron" },
+20: { Slots = 18, Price = 1e23, Grow = 2, Style = "Gold" },
+21: { Slots = 20, Price = 4.999999999999999e24, Grow = 2, Style = "Diamond" }
+--- <unnamed>/ReplicatedStorage/Config/ReleaseConfig ---
+77: HarvestHarbor = { FromArea = 7 },
+78: NuclearWasteland = { FromArea = 14 },
+79: CursedCarnival = { FromArea = 16 },
+80: EclipseKingdom = { FromArea = 17 }
+88: BigFromArea = 7
+94: BigFromArea = 11,
+95: CutsceneFromArea = 14
+101: BigFromArea = 14
+113: AskFrom = { Area = "Ocean", Part = 0 },
+293: function ReleaseConfig.IsUnlocked(p)
+299: return workspace:GetAttribute("Unlocked_" .. p) == true
+349: if ReleaseConfig.IsUnlocked(p) then
+392: function ReleaseConfig.FillUnlocked(list, list2)
+396: if not ReleaseConfig.IsUnlocked(item.Release) then
+415: local isUnlocked = ReleaseConfig.IsUnlocked(k)
+417: if v3[k] == isUnlocked then
+421: v3[k] = isUnlocked
+424: local success, result = pcall(callback, k, isUnlocked)
+434: v3[k] = ReleaseConfig.IsUnlocked(k)
+435: workspace:GetAttributeChangedSignal("Unlocked_" .. k):Connect(ReleaseConfig.Refresh)
+499: task.spawn(callback)
+--- <unnamed>/ReplicatedStorage/Config/DopamineConfig ---
+8: From = { Area = "AncientRuins", Depth = 0.5 },
+9: To = { Area = "MythicalParadise", Depth = 0.5 },
+10: TagFrom = { Area = "AncientRuins", Depth = 0 },
+17: NewSubArea = 15,
+--- <unnamed>/ReplicatedStorage/Config/AdminAbuseConfig ---
+57: { At = "06:45", Say = "What's your favorite food to throw?" },
+80: { At = "12:09", Say = "Buy better food and throw even further!" },
+--- <unnamed>/ReplicatedStorage/Config/AdminsConfig ---
+--- <unnamed>/ReplicatedStorage/Config/RingRushConfig ---
+16: RingRushConfig.Description = "Throw your food and steer it through rings for rewards!"
+46: ReplacedBiomes = {
+58: ZoneLength = 576,
+116: StickDeadzone = 0.12,
+120: FoodRadius = 0.9,
+122: FoodBank = 0.012,
+123: FoodTurnBank = 1.2,
+124: FoodMaxBank = 0.6,
+125: FoodHeading = 0.6,
+126: FoodBankSpring = { Frequency = 9, Damping = 0.65 },
+307: RingRushConfig.WorldVfx = { AheadReach = 500, BehindReach = 150, CheckSeconds = 0.25 }
+--- <unnamed>/ReplicatedStorage/Shared/AreaUtil ---
+3: local AreasConfig = require(ReplicatedStorage.Config.AreasConfig)
+7: local AreaUtil = {}
+27: task.spawn(function()
+28: local biomes = workspace:WaitForChild("Biomes")
+31: for _, item in ipairs(AreasConfig.List) do
+32: local v = biomes:FindFirstChild(item.Key)
+34: while (not v or floorCount(v) < AreasConfig.SubAreas) and os.clock() - lastTime < 30 do
+36: v = biomes:FindFirstChild(item.Key)
+45: local biomes = workspace:WaitForChild("Biomes")
+49: for i, item in ipairs(AreasConfig.List) do
+50: local v2 = biomes:FindFirstChild(item.Key) or biomes:WaitForChild(item.Key, 15)
+68: if #parts < AreasConfig.SubAreas then
+105: warn("[AreaUtil] Biome folder or floor parts missing for " .. item.Key .. " - using the configured layout")
+128: local function getHasEveryFloor(biomes): boolean
+129: for _, item in ipairs(AreasConfig.List) do
+130: if floorCount(biomes:FindFirstChild(item.Key)) < AreasConfig.SubAreas then
+145: task.spawn(function()
+146: local biomes = workspace:WaitForChild("Biomes")
+148: while not getHasEveryFloor(biomes) do
+157: function AreaUtil.GetAll()
+167: task.spawn(function()
+168: local biomes = workspace:WaitForChild("Biomes")
+170: while not getHasEveryFloor(biomes) do
+182: function AreaUtil.Get(p)
+183: return AreaUtil.GetAll()[p]
+186: function AreaUtil.Count()
+187: return #AreaUtil.GetAll()
+190: function AreaUtil.GetLaunchPosition()
+191: local starterArea = workspace:FindFirstChild("StarterArea")
+193: if starterArea then
+195: starterArea.Position.X,
+196: starterArea.Position.Y + starterArea.Size.Y / 2,
+197: starterArea.Position.Z
+205: function AreaUtil.GetAreaIndexForZ(p)
+206: local all2 = AreaUtil.GetAll()
+221: function AreaUtil.DepthInArea(p, p2)
+222: local v = AreaUtil.Get(p)
+227: function AreaUtil.SubAreaLines(p)
+228: local v = AreaUtil.Get(p)
+232: for i = 1, AreasConfig.SubAreas - 1 do
+233: table.insert(result, v.ZStart - v2 * i / AreasConfig.SubAreas)
+239: function AreaUtil.KeepOffLines(p, p2, p3)
+240: for _, v in ipairs(AreaUtil.SubAreaLines(p)) do
+249: function AreaUtil.SubAreaForZ(p, p2)
+250: return (math.clamp(math.floor(AreaUtil.DepthInArea(p, p2) * AreasConfig.SubAreas) + 1, 1, AreasConfig.SubAreas))
+253: function AreaUtil.ProgressForZ(p)
+254: if AreaUtil.GetAll()[1].ZStart <= p then
+258: local areaIndexForZ = AreaUtil.GetAreaIndexForZ(p)
+259: return areaIndexForZ - 1 + AreaUtil.DepthInArea(areaIndexForZ, p)
+262: function AreaUtil.LuckStepsForZ(p)
+263: if AreaUtil.GetAll()[1].ZStart <= p then
+267: local areaIndexForZ = AreaUtil.GetAreaIndexForZ(p)
+268: local subAreas = AreasConfig.SubAreas
+269: local v = (areaIndexForZ - 1) * subAreas + AreaUtil.DepthInArea(areaIndexForZ, p) * subAreas
+282: function AreaUtil.DistanceToAreaCenter(p)
+283: local v = AreaUtil.Get(p)
+284: return AreaUtil.GetLaunchPosition().Z - v.Center.Z
+287: function AreaUtil.DistanceToAreaStart(p)
+288: local v = AreaUtil.Get(p)
+289: return AreaUtil.GetLaunchPosition().Z - v.ZStart + GameConfig.Throw.LandingEdgeMargin
+292: function AreaUtil.MaxReachableArea(p)
+295: for i = 1, AreaUtil.Count() do
+296: if AreaUtil.DistanceToAreaStart(i) <= p then
+304: function AreaUtil.ComputeLanding(p, value)
+305: local launchPosition = AreaUtil.GetLaunchPosition()
+308: local all2 = AreaUtil.GetAll()
+310: local areaIndexForZ = AreaUtil.GetAreaIndexForZ(v2)
+311: local v3 = all2[areaIndexForZ]
+315: areaIndexForZ
+318: function AreaUtil.TargetDistanceForArea(p)
+319: return AreaUtil.DistanceToAreaCenter(p)
+322: return AreaUtil
+--- <unnamed>/ReplicatedStorage/Shared/FoodFX ---
+6: return (ReplicatedStorage:FindFirstChild("FoodFX"))
+--- <unnamed>/ReplicatedStorage/Packages/CharmSync/config ---
+--- <unnamed>/ReplicatedStorage/Packages/Zone ---
+12: local ZonePlusReference = require(script.ZonePlusReference)
+13: local object = ZonePlusReference.getObject()
+14: local ZoneController = script.ZoneController
+15: local Tracker = ZoneController.Tracker
+16: local CollectiveWorldModel = ZoneController.CollectiveWorldModel
+17: local module = require(ZoneController)
+26: local Zone = {}
+27: Zone.__index = Zone
+30: ZonePlusReference.addToReplicatedStorage()
+33: Zone.enum = enums
+35: function Zone.new(container)
+37: setmetatable(class, Zone)
+42: error("The zone container must be a model, folder, basepart or table!")
+53: class.zoneParts = {}
+60: class.zoneId = HttpService:GenerateGUID()
+69: class.allZonePartsAreBlocks = true
+72: class.worldModel = workspace
+108: Zone.touchedConnectionActions = {}
+111: local v5 = class[("_%sTouchedZone"):format(v4)]
+118: Zone.touchedConnectionActions[v4] = function(p)
+125: module._registerZone(class)
+127: module._deregisterZone(class)
+133: function Zone.fromRegion(p, p2)
+156: local v2 = Zone.new(model)
+161: function Zone:_calculateRegion(items, p)
+229: function Zone:_displayBounds()
+249: function Zone:_update()
+280: self.zoneParts = v2
+282: local allZonePartsAreBlocks = true
+290: allZonePartsAreBlocks = false
+294: self.allZonePartsAreBlocks = allZonePartsAreBlocks
+300: self.overlapParams.zonePartsWhitelist = overlapParams
+305: self.overlapParams.zonePartsIgnorelist = overlapParams2
+325: if v3 == 0 and self.zoneId then
+335: error("Zone parts must belong to the 'Default' (0) CollisionGroup! Consider using zone:relocate() if you wish to move zones outside of workspace to prevent them interacting with other parts.")
+378: function Zone._updateOccupants(p, p2, items)
+421: function Zone:_formTouchedConnection(p)
+434: function Zone:_updateTouchedConnection(p)
+441: for _, zonePart in pairs(self.zoneParts) do
+442: v2:add(zonePart.Touched:Connect(self.touchedConnectionActions[p], self), "Disconnect")
+446: function Zone:_updateTouchedConnections()
+459: function Zone:_disconnectTouchedConnection(p)
+473: function Zone:_partTouchedZone(instance)
+540: function Zone:_getRegionConstructor(p, p2)
+547: if success and self.allZonePartsAreBlocks then
+567: function Zone:findLocalPlayer()
+575: function Zone:_find(p, p2): boolean
+578: local touchingZones = module.getTouchingZones(p2, false, self._currentEnterDetection, tracker)
+580: for _, touchingZone in pairs(touchingZones) do
+581: if touchingZone == self then
+589: function Zone:findPlayer(player)
+599: function Zone:findItem(p)
+603: function Zone:findPart(p)
+604: local regionConstructor, v3 = self:_getRegionConstructor(p, self.overlapParams.zonePartsWhitelist)
+605: local v4 = self.worldModel[regionConstructor](self.worldModel, unpack(v3))
+614: function Zone:getCheckerPart()
+615: local zonePlusCheckerPart = self.checkerPart
+617: if not zonePlusCheckerPart then
+618: zonePlusCheckerPart = self.janitor:add(Instance.new("Part"), "Destroy")
+619: zonePlusCheckerPart.Size = Vector3.new(0.1, 0.1, 0.1)
+620: zonePlusCheckerPart.Name = "ZonePlusCheckerPart"
+621: zonePlusCheckerPart.Anchored = true
+622: zonePlusCheckerPart.Transparency = 1
+623: zonePlusCheckerPart.CanCollide = false
+624: self.checkerPart = zonePlusCheckerPart
+627: local parent = self.worldModel
+633: if zonePlusCheckerPart.Parent ~= parent then
+634: zonePlusCheckerPart.Parent = parent
+637: return zonePlusCheckerPart
+640: function Zone:findPoint(cframe)
+648: local regionConstructor, v3 = self:_getRegionConstructor(checkerPart, self.overlapParams.zonePartsWhitelist)
+649: local v4 = self.worldModel[regionConstructor](self.worldModel, unpack(v3))
+658: function Zone:_getAll(p)
+661: local v3 = module._getZonesAndItems(p, { self = true }, self.volume, false, self._currentEnterDetection)[self]
+672: function Zone:getPlayers()
+676: function Zone:getItems()
+680: function Zone:getParts()
+692: local partBoundsInBox = self.worldModel:GetPartBoundsInBox(
+695: self.overlapParams.zonePartsIgnorelist
+708: function Zone:getRandomPoint()
+730: function Zone:setAccuracy(p)
+748: function Zone:setDetection(p)
+767: function Zone:trackItem(part)
+802: function Zone:untrackItem(p)
+815: function Zone:bindToGroup(settingsGroupName)
+817: (module.getGroup(settingsGroupName) or module.setGroup(settingsGroupName))._memberZones[self.zoneId] = self
+821: function Zone:unbindFromGroup()
+826: group._memberZones[self.zoneId] = nil
+833: function Zone:relocate()
+838: local module2 = require(CollectiveWorldModel)
+839: local v3 = module2.setupWorldModel(self)
+840: self.worldModel = v3
+848: for _, zonePart in pairs(self.zoneParts) do
+849: zonePart.Parent = parent
+857: function Zone:_onItemCallback(p, p2, p3, callback)
+895: function Zone:onItemEnter(...)
+899: function Zone:onItemExit(...)
+903: function Zone:destroy()
+907: Zone.Destroy = Zone.destroy
+909: return Zone
+--- <unnamed>/ReplicatedStorage/Packages/Zone/ZoneController ---
+6: local CollectiveWorldModel = require(script.CollectiveWorldModel)
+13: local zoneParts = {}
+15: local zoneParts2 = {}
+23: local ZoneController = {}
+25: ZoneController.trackers = trackers
+50: return ZoneController._getZonesAndItems("player", v, total, true, p)
+60: local touchingZones = ZoneController.getTouchingZones(character, true, p, trackers.player)
+62: for _, touchingZone in pairs(touchingZones) do
+63: if touchingZone.activeTriggers.localPlayer then
+64: fillOccupants(v8, touchingZone, localPlayer) -- inferred equivalent call
+71: return ZoneController._getZonesAndItems("item", v, total, true, p)
+75: function ZoneController:_registerZone()
+80: ZoneController._updateZoneDetails()
+82: ZoneController._updateZoneDetails()
+85: function ZoneController:_deregisterZone()
+89: ZoneController._updateZoneDetails()
+92: function ZoneController._registerConnection(object, p)
+98: ZoneController._updateZoneDetails()
+110: ZoneController._formHeartbeat(p)
+114: function ZoneController:updateDetection()
+134: function ZoneController._formHeartbeat(p)
+158: ZoneController.updateDetection(k)
+172: local v16 = k.settingsGroupName and ZoneController.getGroup(k.settingsGroupName)
+256: function ZoneController._deregisterConnection(object, p)
+275: ZoneController._updateZoneDetails()
+283: function ZoneController._updateZoneDetails()
+284: zoneParts = {}
+286: zoneParts2 = {}
+297: for _, zonePart in pairs(k.zoneParts) do
+299: table.insert(zoneParts, zonePart)
+300: v4[zonePart] = k
+303: table.insert(zoneParts2, zonePart)
+304: v5[zonePart] = k
+309: function ZoneController._getZonesAndItems(p, items, total2, p2, p3)
+316: local zonesAndItems = {}
+321: local touchingZones = ZoneController.getTouchingZones(character, p2, p3, v9)
+323: for _, touchingZone in pairs(touchingZones) do
+324: if not (not p2 or touchingZone.activeTriggers[p]) then
+337: fillOccupants(zonesAndItems, touchingZone, v10) -- inferred equivalent call
+347: local partBoundsInBox = CollectiveWorldModel:GetPartBoundsInBox(
+367: fillOccupants(zonesAndItems, k, playerFromCharacter) -- inferred equivalent call
+370: fillOccupants(zonesAndItems, k, character) -- inferred equivalent call
+376: return zonesAndItems
+379: function ZoneController.getZones()
+380: local zones = {}
+383: table.insert(zones, k)
+386: return zones
+389: function ZoneController.getTouchingZones(part, p, p2, p3)
+426: local filterDescendantsInstances = p and zoneParts or zoneParts2
+433: local partBoundsInBox = CollectiveWorldModel:GetPartBoundsInBox(v12, v11, overlapParams)
+442: if v17 and v17.allZonePartsAreBlocks then
+466: local partsInPart = CollectiveWorldModel:GetPartsInPart(part2, overlapParams2)
+512: function ZoneController.setGroup(name, items)
+523: result._memberZones = {}
+534: function ZoneController.getGroup(p)
+539: local name = string.format("ZonePlus%sContainer", RunService:IsClient() and "Client" or "Server")
+540: function ZoneController.getWorkspaceContainer()
+555: return ZoneController
+--- <unnamed>/ReplicatedStorage/Packages/Zone/ZoneController/CollectiveWorldModel ---
+2: local zonePlusWorldModel = nil
+4: local CollectiveWorldModel = {}
+6: function CollectiveWorldModel.setupWorldModel(_)
+7: if zonePlusWorldModel then
+8: return zonePlusWorldModel
+12: zonePlusWorldModel = Instance.new("WorldModel")
+13: zonePlusWorldModel.Name = "ZonePlusWorldModel"
+14: zonePlusWorldModel.Parent = game:GetService(v)
+15: return zonePlusWorldModel
+18: function CollectiveWorldModel:_getCombinedResults(p, ...)
+21: if zonePlusWorldModel then
+22: local v = zonePlusWorldModel[p](zonePlusWorldModel, ...)
+32: function CollectiveWorldModel:GetPartBoundsInBox(p, p2, p3)
+36: function CollectiveWorldModel:GetPartBoundsInRadius(p, p2, p3)
+40: function CollectiveWorldModel:GetPartsInPart(p, p2)
+44: return CollectiveWorldModel
+--- <unnamed>/ReplicatedStorage/Packages/Zone/ZonePlusReference ---
+3: local ZonePlusReference = {}
+5: function ZonePlusReference.addToReplicatedStorage()
+22: function ZonePlusReference.getObject()
+26: return ZonePlusReference
+--- <unnamed>/ServerScriptService/Server/WorldService ---
+1: -- Monde : déblocage des zones planifiées, classements, événements non actifs
+13: local World = {}
+22: if now >= at and workspace:GetAttribute("Unlocked_" .. key) ~= true then
+23: workspace:SetAttribute("Unlocked_" .. key, true)
+128: function World.Start()
+130: task.spawn(function()
+146: task.spawn(function()
+153: task.spawn(function()
+156: for _, p in ipairs(Players:GetPlayers()) do task.spawn(saveBoards, p) end
+161: return World
+--- <unnamed>/ServerStorage/ZoneBuilder ---
+1: -- ZoneBuilder : construit murs + décors en style stud pour les zones vides.
+2: -- Usage (barre de commande) : require(game.ServerStorage.ZoneBuilder).Build("HarvestFields")
+557: function ZB.Measure(biome)
+559: for _, f in ipairs(biome.FloorSegments:GetChildren()) do
+571: local biome = workspace.Biomes[key]
+573: local old = biome:FindFirstChild("WallSegments")
+575: local oldW = biome:FindFirstChild("Wall")
+577: local zS, zE, F, half = ZB.Measure(biome)
+602: folder.Parent = biome
+612: lip.Parent = biome
+617: local function spawnProp(folder, key, list, cf, s, r, idx)
+623: warn("[ZoneBuilder] prop error: " .. tostring(err))
+627: m.WorldPivot = cf
+633: local biome = workspace.Biomes[key]
+636: local old = biome:FindFirstChild(name)
+640: local zS, zE, F, half = ZB.Measure(biome)
+654: spawnProp(folder, key, th.Small, face(Vector3.new(sgn * (half - r:NextNumber(3, 5)), floorTop, z), sgn), r:NextNumber(0.9, 1.25), r, count)
+663: spawnProp(folder, key, th.Medium, face(Vector3.new(sgn * (half + 15 + r:NextNumber(-4, 4)), ledgeTop, z), sgn), r:NextNumber(1, 1.4), r, count)
+672: spawnProp(folder, key, th.Big, face(Vector3.new(sgn * (half + 30 + r:NextNumber(14, 55)), outerTop, z), sgn), r:NextNumber(0.9, 1.25), r, count)
+675: spawnProp(folder, key, th.Medium, face(Vector3.new(sgn * (half + 30 + r:NextNumber(10, 70)), outerTop, z - r:NextNumber(12, 22)), sgn), r:NextNumber(0.9, 1.3), r, count)
+680: folder.Parent = biome

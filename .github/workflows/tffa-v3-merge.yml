@@ -63,6 +63,8 @@ jobs:
           git add build-output/TFFA_merged.rbxl build-output/merge-report.txt build-output/source-audit.txt
           if ! git diff --cached --quiet; then
             git commit -m "Publish merged TFFA v3 place and source audit"
+            git fetch origin tffa-v3-merge
+            git rebase origin/tffa-v3-merge
             git push origin HEAD:tffa-v3-merge
           fi
 

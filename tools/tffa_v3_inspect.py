@@ -96,5 +96,19 @@ for node,path in walk(root):
                 if re.search(r"zone|area|biome|world|food|price|rarity|unlock|spawn|teleport",line,re.I):
                     lines.append(f"{i}: {line.strip()[:400]}")
 
+
+# Full source for the key area/food modules, so names and lookup behavior are auditable.
+lines += ["","=== FULL AREA / FOOD MODULE SOURCE ==="]
+for node,path in walk(root):
+    nm=get_prop(node,"Name") or ""
+    if node.get("class") == "ModuleScript" and nm in ("AreasConfig","AreaUtil","FoodsConfig","FoodsData"):
+        props=node.find("Properties")
+        if props is not None:
+            for p in props:
+                if p.get("name") == "Source":
+                    lines.append(f"--- {path} ---")
+                    lines.extend((p.text or "").splitlines())
+                    break
+
 Path("source-audit.txt").write_text("\n".join(lines)+"\n",encoding="utf-8")
 print("\n".join(lines))

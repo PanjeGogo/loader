@@ -127,13 +127,25 @@ def main():
 
     # Rename existing biome zones to locations that appear in the Pokémon anime.
     zone_names = {
+        "Forest": "Viridian Forest",
+        "Savana": "Safari Land",
         "Desert": "Desert Resort",
+        "Jungle": "Forest of Okoya",
         "Ocean": "Seafoam Island",
         "Mountains": "Mt. Silver",
-        "Taiga": "Viridian Forest",
-        "Winter": "Snowpoint City",
+        "Taiga": "Charicific Valley",
+        "Winter": "Snowtop Mountain",
+        "PrehistoricForest": "Forbidden Forest",
         "DeepWaters": "Sootopolis City",
+        "Hell": "Mt. Chimney",
+        "AncientRuins": "Oldale Ruins",
         "MythicalParadise": "Aether Paradise",
+        "ShadowRealm": "Distortion World",
+        "EclipseKingdom": "Eclipse Castle",
+        "PhantomHarbor": "Old Shore Wharf",
+        "HarvestFields": "Sunflora Lodge",
+        "NuclearWasteland": "Po Town",
+        "CursedCarnival": "Pokemon Theme Park",
     }
     workspace = find_child(datamodel, "Workspace")
     biomes = find_child(workspace, "Biomes") if workspace is not None else None

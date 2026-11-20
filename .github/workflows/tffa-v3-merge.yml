@@ -1,0 +1,59 @@
+name: TFFA v3 merge
+
+on:
+  push:
+    branches:
+      - tffa-v3-merge
+    paths:
+      - "TFFA_update_v3.zip"
+      - "trow food for animal fully script.rbxl"
+      - "tools/tffa_v3_merge.py"
+      - ".github/workflows/tffa-v3-merge.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  merge-place:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - name: Checkout source files
+        uses: actions/checkout@v4
+
+      - name: Set up Rust
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Build rbx-util converter
+        run: |
+          git clone --depth 1 https://github.com/rojo-rbx/rbx-dom.git
+          cd rbx-dom
+          cargo build --release --manifest-path rbx_util/Cargo.toml
+          echo "$GITHUB_WORKSPACE/rbx-dom/target/release" >> "$GITHUB_PATH"
+
+      - name: Convert original place to XML
+        run: |
+          rbx-util convert "trow food for animal fully script.rbxl" base.rbxlx
+
+      - name: Merge TFFA v3 scripts
+        run: |
+          python tools/tffa_v3_merge.py
+
+      - name: Convert merged place back to binary
+        run: |
+          rbx-util convert merged.rbxlx TFFA_merged.rbxl
+          rbx-util convert TFFA_merged.rbxl roundtrip-check.rbxlx
+          test -s TFFA_merged.rbxl
+          grep -q '<roblox' roundtrip-check.rbxlx
+
+      - name: Upload merged Roblox place
+        uses: actions/upload-artifact@v4
+        with:
+          name: TFFA-v3-merged-place
+          path: |
+            TFFA_merged.rbxl
+            merged.rbxlx
+            merge-report.txt
+          if-no-files-found: error
+          retention-days: 14
